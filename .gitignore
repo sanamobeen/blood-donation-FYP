@@ -1,0 +1,214 @@
+# ==========================================
+# Blood Bank Project - Git Ignore
+# Django Backend + Flutter Frontend
+# ==========================================
+
+# ==========================================
+# Python / Django (Backend)
+# ==========================================
+
+# Virtual Environment
+backend/venv/
+venv/
+env/
+ENV/
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+/media/
+/staticfiles/
+/static/
+
+# Environment Variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+backend/.env
+backend/.env.local
+
+# PyCharm / JetBrains IDEs
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pytest
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# ==========================================
+# Flutter / Dart (Frontend)
+# ==========================================
+
+# Flutter/Dart
+frontend/.dart_tool/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/.packages
+frontend/.pub-cache/
+frontend/.pub/
+frontend/pubspec.lock
+
+# Flutter build artifacts
+frontend/build/
+frontend/.android/
+frontend/.ios/
+frontend/.linux/
+frontend/.macos/
+frontend/.windows/
+frontend/.web/
+
+# Flutter symbolication
+app.*.symbols
+
+# Obfuscation
+frontend/ios/Flutter/flutter_export_environment.sh
+frontend/ios/Flutter/Flutter.framework
+frontend/ios/Flutter/Flutter.podspec
+frontend/ios/.symlinks/
+frontend/ios/Flutter/flutter_assets/
+frontend/ios/.generated/
+frontend/ios/Flutter/app.flx
+frontend/ios/Flutter/app.zip
+frontend/ios/Flutter/flutter_build/
+
+# Android
+frontend/android/**/gradle-wrapper.jar
+frontend/android/.gradle
+frontend/android/captures/
+frontend/android/gradlew
+frontend/android/gradlew.bat
+frontend/android/local.properties
+frontend/android/**/GeneratedPluginRegistrant.java
+frontend/android/key.properties
+frontend/android/*.jks
+frontend/android/*.keystore
+
+# Android Studio
+frontend/android/.idea/
+frontend/android/*.iml
+frontend/android/.gradle/
+
+# iOS/macOS
+frontend/ios/.symlinks/
+frontend/ios/Pods/
+frontend/ios/.generated/
+frontend/ios/Flutter/App.framework
+frontend/ios/Flutter/Flutter.framework
+frontend/ios/Flutter/Flutter.podspec
+frontend/ios/Flutter/flutter_export_environment.sh
+frontend/ios/Flutter/flutter_assets/
+frontend/ios/Flutter/flutter_build/
+frontend/macos/Flutter/ephemeral/
+frontend/macos/.dart_tool/
+frontend/macos/.symlinks/
+frontend/macos/Pods/
+
+# Web
+frontend/web/.dart_tool/
+frontend/web/.packages
+
+# Linux
+frontend/linux/flutter/ephemeral/
+
+# Windows
+frontend/windows/flutter/ephemeral/
+
+# Test coverage
+frontend/coverage/
+
+# ==========================================
+# General / Cross-platform
+# ==========================================
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Claude Code
+.claude/
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# Backup files
+*.bak
+*.backup
+
+# Package manager locks (keep pubspec.lock for Flutter, but ignore others)
+frontend/pubspec.lock
+yarn.lock
+package-lock.json
+
+# ==========================================
+# Project Specific (Optional - uncomment if needed)
+# ==========================================
+
+# If you have static/media files that shouldn't be committed
+# backend/media/*
+# !backend/media/.gitkeep
+
+# If you have uploaded files
+# backend/uploads/
+
+# If you have debug files
+# *.debug.log
+
+# Database dumps
+# *.sql
+# *.sqlite
