@@ -158,19 +158,21 @@ class _LandingPageState extends State<LandingPage> {
   }
 
   Widget _savingLivesBadge() {
-    return Container(
-      margin: const EdgeInsets.only(top: 20),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.red.shade100,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        "❤️ SAVING LIVES TOGETHER",
-        style: TextStyle(
-          color: Colors.red.shade900,
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.only(top: 20, bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.red.shade100,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          "❤️ SAVING LIVES TOGETHER",
+          style: TextStyle(
+            color: Colors.red.shade900,
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+          ),
         ),
       ),
     );
@@ -178,12 +180,12 @@ class _LandingPageState extends State<LandingPage> {
 
   Widget _findNearbyDonorCard(bool isDark, bool isSmall) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 20),
+      padding: const EdgeInsets.only(left: 0, right: 0, top: 0, bottom: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.only(left: 20, right: 20, bottom: 20, top: 4),
             child: Text(
               "Find Nearby Donor",
               style: TextStyle(
@@ -194,13 +196,14 @@ class _LandingPageState extends State<LandingPage> {
             ),
           ),
           Container(
-            margin: const EdgeInsets.symmetric(horizontal: 0),
+            margin: const EdgeInsets.symmetric(horizontal: 20),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: isDark ? Colors.grey.shade700 : Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(30),
               border: Border.all(
-                color: isDark ? Colors.grey.shade600 : Colors.grey.shade300,
+                color: Colors.red.shade900,
+                width: 2,
               ),
             ),
             child: Row(
@@ -306,9 +309,9 @@ class _LandingPageState extends State<LandingPage> {
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: Colors.grey.shade100,
+          color: Colors.red.shade100,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.red.shade900, width: 2),
+          border: Border.all(color: Colors.red.shade900, width: 4),
         ),
         child: icon is Widget ? icon : Icon(icon, size: 48, color: Colors.red.shade900),
       ),
@@ -437,7 +440,7 @@ class _LandingPageState extends State<LandingPage> {
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
             "Why Choose Us?",
@@ -446,6 +449,7 @@ class _LandingPageState extends State<LandingPage> {
               fontWeight: FontWeight.bold,
               color: Colors.red.shade900,
             ),
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           const Text(
@@ -455,6 +459,7 @@ class _LandingPageState extends State<LandingPage> {
               fontWeight: FontWeight.w500,
               color: Colors.black,
             ),
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 20),
           GridView.builder(
@@ -471,19 +476,19 @@ class _LandingPageState extends State<LandingPage> {
               final feature = features[index];
               final color = feature['color'] as Color;
               return Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.grey.shade800 : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
+                  color: isDark ? Colors.grey.shade800 : Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: color.withValues(alpha: 0.3),
-                    width: 2,
+                    color: color.withValues(alpha: 0.6),
+                    width: 3,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: color.withValues(alpha: 0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
+                      color: color.withValues(alpha: 0.2),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
                     ),
                   ],
                 ),
@@ -491,35 +496,40 @@ class _LandingPageState extends State<LandingPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(10),
+                      padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.1),
+                        color: color.withValues(alpha: 0.15),
                         shape: BoxShape.circle,
+                        border: Border.all(
+                          color: color.withValues(alpha: 0.3),
+                          width: 2,
+                        ),
                       ),
                       child: Icon(
                         feature['icon'] as IconData,
                         color: color,
-                        size: 28,
+                        size: 36,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
                     Text(
                       feature['title'] as String,
                       style: const TextStyle(
-                        fontSize: 13,
+                        fontSize: 14,
                         fontWeight: FontWeight.bold,
+                        color: Colors.black87,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     Text(
                       feature['description'] as String,
                       style: TextStyle(
-                        fontSize: 10,
+                        fontSize: 11,
                         fontWeight: FontWeight.w500,
-                        color: isDark ? Colors.grey.shade300 : Colors.black87,
+                        color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
