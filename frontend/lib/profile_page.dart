@@ -365,16 +365,11 @@ class ProfilePage extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        SizedBox(
-          height: 80,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: achievements.length,
-            itemBuilder: (context, index) {
-              final achievement = achievements[index];
-              return Container(
-                width: 120,
-                margin: const EdgeInsets.only(right: 12),
+        Row(
+          children: achievements.map((achievement) {
+            return Expanded(
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 4),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -400,9 +395,9 @@ class ProfilePage extends StatelessWidget {
                     ),
                   ],
                 ),
-              );
-            },
-          ),
+              ),
+            );
+          }).toList(),
         ),
       ],
     );
