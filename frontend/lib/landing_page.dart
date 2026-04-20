@@ -82,7 +82,9 @@ class _LandingPageState extends State<LandingPage> {
               IconButton(
                 icon: const Icon(Icons.notifications_outlined, color: Colors.white),
                 onPressed: () {
-                  // TODO: notification functionality
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Notifications coming soon!')),
+                  );
                 },
               ),
               Positioned(
@@ -131,7 +133,7 @@ class _LandingPageState extends State<LandingPage> {
           color: Colors.red.shade900,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
+              color: Colors.black.withValues(alpha: 0.2),
               blurRadius: 10,
               offset: const Offset(0, -2),
             ),
@@ -474,12 +476,12 @@ class _LandingPageState extends State<LandingPage> {
                   color: isDark ? Colors.grey.shade800 : Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: color.withOpacity(0.3),
+                    color: color.withValues(alpha: 0.3),
                     width: 2,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: color.withOpacity(0.1),
+                      color: color.withValues(alpha: 0.1),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),
@@ -491,7 +493,7 @@ class _LandingPageState extends State<LandingPage> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: color.withOpacity(0.1),
+                        color: color.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
@@ -583,7 +585,7 @@ class _LandingPageState extends State<LandingPage> {
   Widget _themeToggle() {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: themeNotifier,
-      builder: (_, mode, __) {
+      builder: (_, mode, _) {
         return IconButton(
           icon: Icon(
             mode == ThemeMode.light ? Icons.dark_mode : Icons.light_mode,
@@ -610,7 +612,7 @@ class _LandingPageState extends State<LandingPage> {
           padding: const EdgeInsets.symmetric(vertical: 12),
           child: Icon(
             icon,
-            color: Colors.white.withOpacity(0.7),
+            color: Colors.white.withValues(alpha: 0.7),
             size: 24,
           ),
         ),
