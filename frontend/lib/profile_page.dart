@@ -215,7 +215,7 @@ class ProfilePage extends StatelessWidget {
         color: isDark ? Colors.grey.shade800 : Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: color.withOpacity(0.3),
+          color: color.withValues(alpha: 0.3),
           width: 2,
         ),
       ),
@@ -255,7 +255,7 @@ class ProfilePage extends StatelessWidget {
         color: isDark ? Colors.grey.shade800 : Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: statusColor.withOpacity(0.5),
+          color: statusColor.withValues(alpha: 0.5),
           width: 2,
         ),
       ),
@@ -279,7 +279,7 @@ class ProfilePage extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.1),
+              color: statusColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -441,7 +441,9 @@ class ProfilePage extends StatelessWidget {
           Icons.history,
           Colors.purple,
           () {
-            // TODO: Navigate to donation history
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Donation History coming soon!')),
+            );
           },
         ),
         const SizedBox(height: 8),
@@ -466,7 +468,9 @@ class ProfilePage extends StatelessWidget {
           Icons.settings,
           Colors.grey,
           () {
-            // TODO: Navigate to settings
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Settings coming soon!')),
+            );
           },
         ),
         const SizedBox(height: 8),
@@ -497,7 +501,7 @@ class ProfilePage extends StatelessWidget {
           color: isDark ? Colors.grey.shade800 : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: color.withOpacity(0.3),
+            color: color.withValues(alpha: 0.3),
             width: 1,
           ),
         ),
@@ -505,7 +509,7 @@ class ProfilePage extends StatelessWidget {
           leading: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: color, size: 24),

@@ -13,7 +13,7 @@ class BloodDonationApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: themeNotifier,
-      builder: (_, mode, __) {
+      builder: (_, mode, _) {
         return MaterialApp(
           title: 'Blood Donor',
           debugShowCheckedModeBanner: false,
