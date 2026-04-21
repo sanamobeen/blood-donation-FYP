@@ -7,6 +7,7 @@ import 'ai_assistant_page.dart';
 import 'menu_page.dart';
 import 'profile_page.dart';
 import 'theme_provider.dart';
+import 'blood_donation_form_page.dart';
 
 class LandingPage extends StatefulWidget {
   const LandingPage({super.key});
@@ -156,19 +157,21 @@ class _LandingPageState extends State<LandingPage> {
   }
 
   Widget _savingLivesBadge() {
-    return Container(
-      margin: const EdgeInsets.only(top: 20),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.red.shade100,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        "❤️ SAVING LIVES TOGETHER",
-        style: TextStyle(
-          color: Colors.red.shade900,
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.only(top: 20, bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.red.shade100,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          "❤️ SAVING LIVES TOGETHER",
+          style: TextStyle(
+            color: Colors.red.shade900,
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+          ),
         ),
       ),
     );
@@ -176,12 +179,12 @@ class _LandingPageState extends State<LandingPage> {
 
   Widget _findNearbyDonorCard(bool isDark, bool isSmall) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 20),
+      padding: const EdgeInsets.only(left: 0, right: 0, top: 0, bottom: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.only(left: 20, right: 20, bottom: 20, top: 4),
             child: Text(
               "Find Nearby Donor",
               style: TextStyle(
@@ -192,13 +195,14 @@ class _LandingPageState extends State<LandingPage> {
             ),
           ),
           Container(
-            margin: const EdgeInsets.symmetric(horizontal: 0),
+            margin: const EdgeInsets.symmetric(horizontal: 20),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: isDark ? Colors.grey.shade700 : Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(30),
               border: Border.all(
-                color: isDark ? Colors.grey.shade600 : Colors.grey.shade300,
+                color: Colors.red.shade900,
+                width: 2,
               ),
             ),
             child: Row(
@@ -243,23 +247,10 @@ class _LandingPageState extends State<LandingPage> {
           Expanded(
             child: Column(
               children: [
-                _actionCard(false, _buildBloodDropWithPlus(), const EmergencyPage()),
+                _actionCard(false, _buildBloodDropWithPlus(), const BloodDonationFormPage()),
                 const SizedBox(height: 8),
                 const Text(
                   "Add Request",
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              children: [
-                _actionCard(false, Icons.location_on, const FindDonorsPage()),
-                const SizedBox(height: 8),
-                const Text(
-                  "Nearby Hospital",
                   style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                 ),
               ],
@@ -304,9 +295,9 @@ class _LandingPageState extends State<LandingPage> {
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: Colors.grey.shade100,
+          color: Colors.red.shade100,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.red.shade900, width: 2),
+          border: Border.all(color: Colors.red.shade900, width: 4),
         ),
         child: icon is Widget ? icon : Icon(icon, size: 48, color: Colors.red.shade900),
       ),
@@ -607,13 +598,6 @@ class _LandingPageState extends State<LandingPage> {
                 );
               },
         child: Container(
-<<<<<<< Updated upstream
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Icon(
-            icon,
-            color: Colors.white.withOpacity(0.7),
-            size: 24,
-=======
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -636,7 +620,6 @@ class _LandingPageState extends State<LandingPage> {
                 overflow: TextOverflow.ellipsis,
               ),
             ],
->>>>>>> Stashed changes
           ),
         ),
       ),
