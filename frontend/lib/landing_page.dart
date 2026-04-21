@@ -307,20 +307,31 @@ class _LandingPageState extends State<LandingPage> {
   }
 
   Widget _imageCarousel(bool isDark) {
-    final List<Map<String, String>> carouselItems = List.generate(5, (index) {
-      final titles = ['Donate Blood', 'Save Lives', 'Be a Hero', 'Join Us', 'Help Others'];
-      return {
-        'image': 'assets/blood_donation$index.jpg',
-        'title': titles[index],
-      };
-    });
+    final List<Map<String, String>> carouselItems = [
+      {
+        'image': 'assets/images/pexels-anna-madera-737731338-18523230.jpg',
+        'title': 'Donate Blood',
+      },
+      {
+        'image': 'assets/images/Fewer than 50 people in the world have this___ (1).jfif',
+        'title': 'Save Lives',
+      },
+      {
+        'image': 'assets/images/Targeting the Regulars.jfif',
+        'title': 'Be a Hero',
+      },
+      {
+        'image': 'assets/images/pexels-charliehelenrobinson-4531307.jpg',
+        'title': 'Join Us',
+      },
+    ];
 
     return Padding(
       padding: const EdgeInsets.only(top: 10, bottom: 20),
       child: Column(
         children: [
           SizedBox(
-            height: 200,
+            height: 250,
             child: PageView.builder(
               controller: _pageController,
               onPageChanged: (index) {
@@ -340,52 +351,36 @@ class _LandingPageState extends State<LandingPage> {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(14),
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        // Placeholder for image
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.image,
-                              size: 64,
-                              color: Colors.grey.shade400,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              item['title']!,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
+                    child: Image.asset(
+                      item['image']!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.error, size: 64, color: Colors.grey),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Image not found',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey.shade600,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
-                            ),
-                            Text(
-                              "Image ${index + 1}",
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey.shade600,
+                              const SizedBox(height: 4),
+                              Text(
+                                'Expected: ${item['image']!}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade500,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                        // Uncomment to use real images:
-                        // Image.asset(
-                        //   item['image']!,
-                        //   fit: BoxFit.cover,
-                        //   errorBuilder: (context, error, stackTrace) {
-                        //     return Center(
-                        //       child: Column(
-                        //         mainAxisAlignment: MainAxisAlignment.center,
-                        //         children: [
-                        //           const Icon(Icons.error, size: 64),
-                        //           Text('Image not found'),
-                        //         ],
-                        //       ),
-                        //     );
-                        //   },
-                        // ),
-                      ],
+                            ],
+                          ),
+                        );
+                      },
                     ),
                   ),
                 );
@@ -395,7 +390,7 @@ class _LandingPageState extends State<LandingPage> {
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(5, (index) {
+            children: List.generate(4, (index) {
               return AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 margin: const EdgeInsets.symmetric(horizontal: 4),
