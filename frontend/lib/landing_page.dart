@@ -607,11 +607,36 @@ class _LandingPageState extends State<LandingPage> {
                 );
               },
         child: Container(
+<<<<<<< Updated upstream
           padding: const EdgeInsets.symmetric(vertical: 12),
           child: Icon(
             icon,
             color: Colors.white.withOpacity(0.7),
             size: 24,
+=======
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                color: Colors.white,
+                size: 24,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+>>>>>>> Stashed changes
           ),
         ),
       ),
