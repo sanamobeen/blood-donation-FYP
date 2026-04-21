@@ -7,6 +7,7 @@ import 'ai_assistant_page.dart';
 import 'menu_page.dart';
 import 'profile_page.dart';
 import 'theme_provider.dart';
+import 'blood_donation_form_page.dart';
 
 class LandingPage extends StatefulWidget {
   const LandingPage({super.key});
@@ -248,7 +249,7 @@ class _LandingPageState extends State<LandingPage> {
           Expanded(
             child: Column(
               children: [
-                _actionCard(false, _buildBloodDropWithPlus(), const EmergencyPage()),
+                _actionCard(false, _buildBloodDropWithPlus(), const BloodDonationFormPage()),
                 const SizedBox(height: 8),
                 const Text(
                   "Add Request",
@@ -619,13 +620,6 @@ class _LandingPageState extends State<LandingPage> {
                 );
               },
         child: Container(
-<<<<<<< Updated upstream
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Icon(
-            icon,
-            color: Colors.white.withValues(alpha: 0.7),
-            size: 24,
-=======
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -648,7 +642,6 @@ class _LandingPageState extends State<LandingPage> {
                 overflow: TextOverflow.ellipsis,
               ),
             ],
->>>>>>> Stashed changes
           ),
         ),
       ),
