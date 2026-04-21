@@ -83,7 +83,9 @@ class _LandingPageState extends State<LandingPage> {
               IconButton(
                 icon: const Icon(Icons.notifications_outlined, color: Colors.white),
                 onPressed: () {
-                  // TODO: notification functionality
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Notifications coming soon!')),
+                  );
                 },
               ),
               Positioned(
@@ -132,7 +134,7 @@ class _LandingPageState extends State<LandingPage> {
           color: Colors.red.shade900,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
+              color: Colors.black.withValues(alpha: 0.2),
               blurRadius: 10,
               offset: const Offset(0, -2),
             ),
@@ -426,7 +428,7 @@ class _LandingPageState extends State<LandingPage> {
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
             "Why Choose Us?",
@@ -435,6 +437,7 @@ class _LandingPageState extends State<LandingPage> {
               fontWeight: FontWeight.bold,
               color: Colors.red.shade900,
             ),
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           const Text(
@@ -444,6 +447,7 @@ class _LandingPageState extends State<LandingPage> {
               fontWeight: FontWeight.w500,
               color: Colors.black,
             ),
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 20),
           GridView.builder(
@@ -460,19 +464,19 @@ class _LandingPageState extends State<LandingPage> {
               final feature = features[index];
               final color = feature['color'] as Color;
               return Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.grey.shade800 : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
+                  color: isDark ? Colors.grey.shade800 : Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: color.withOpacity(0.3),
-                    width: 2,
+                    color: color.withValues(alpha: 0.6),
+                    width: 3,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: color.withOpacity(0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
+                      color: color.withValues(alpha: 0.2),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
                     ),
                   ],
                 ),
@@ -480,35 +484,40 @@ class _LandingPageState extends State<LandingPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(10),
+                      padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: color.withOpacity(0.1),
+                        color: color.withValues(alpha: 0.15),
                         shape: BoxShape.circle,
+                        border: Border.all(
+                          color: color.withValues(alpha: 0.3),
+                          width: 2,
+                        ),
                       ),
                       child: Icon(
                         feature['icon'] as IconData,
                         color: color,
-                        size: 28,
+                        size: 36,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
                     Text(
                       feature['title'] as String,
                       style: const TextStyle(
-                        fontSize: 13,
+                        fontSize: 14,
                         fontWeight: FontWeight.bold,
+                        color: Colors.black87,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     Text(
                       feature['description'] as String,
                       style: TextStyle(
-                        fontSize: 10,
+                        fontSize: 11,
                         fontWeight: FontWeight.w500,
-                        color: isDark ? Colors.grey.shade300 : Colors.black87,
+                        color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -574,7 +583,7 @@ class _LandingPageState extends State<LandingPage> {
   Widget _themeToggle() {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: themeNotifier,
-      builder: (_, mode, __) {
+      builder: (_, mode, _) {
         return IconButton(
           icon: Icon(
             mode == ThemeMode.light ? Icons.dark_mode : Icons.light_mode,

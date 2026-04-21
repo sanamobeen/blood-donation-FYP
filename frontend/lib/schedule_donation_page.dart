@@ -398,7 +398,7 @@ class _ScheduleDonationPageState extends State<ScheduleDonationPage> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.red.shade900.withOpacity(0.1),
+                        color: Colors.red.shade900.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Icon(
@@ -547,7 +547,7 @@ class _ScheduleDonationPageState extends State<ScheduleDonationPage> {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? color.withOpacity(0.1)
+                      ? color.withValues(alpha: 0.1)
                       : (isDark
                           ? Colors.grey.shade800
                           : Colors.white),
@@ -562,7 +562,7 @@ class _ScheduleDonationPageState extends State<ScheduleDonationPage> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: color.withOpacity(0.1),
+                        color: color.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
@@ -773,7 +773,7 @@ class _ScheduleDonationPageState extends State<ScheduleDonationPage> {
               color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
             ),
           ),
-          activeColor: Colors.red.shade900,
+          activeThumbColor: Colors.red.shade900,
           contentPadding: EdgeInsets.zero,
         ),
       ],
@@ -813,7 +813,7 @@ class _ScheduleDonationPageState extends State<ScheduleDonationPage> {
                     Text(
                       "Date & Time",
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                         fontSize: 12,
                       ),
                     ),
@@ -870,7 +870,7 @@ class _ScheduleDonationPageState extends State<ScheduleDonationPage> {
                     Text(
                       "Donation Center",
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                         fontSize: 12,
                       ),
                     ),
@@ -885,7 +885,7 @@ class _ScheduleDonationPageState extends State<ScheduleDonationPage> {
                     Text(
                       center['address'],
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                         fontSize: 12,
                       ),
                       maxLines: 2,
@@ -910,7 +910,7 @@ class _ScheduleDonationPageState extends State<ScheduleDonationPage> {
                     Text(
                       "Donation Type",
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                         fontSize: 12,
                       ),
                     ),
@@ -925,7 +925,7 @@ class _ScheduleDonationPageState extends State<ScheduleDonationPage> {
                     Text(
                       donationType['duration'],
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                         fontSize: 12,
                       ),
                     ),
