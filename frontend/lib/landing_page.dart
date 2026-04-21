@@ -262,19 +262,6 @@ class _LandingPageState extends State<LandingPage> {
           Expanded(
             child: Column(
               children: [
-                _actionCard(false, Icons.location_on, const FindDonorsPage()),
-                const SizedBox(height: 8),
-                const Text(
-                  "Nearby Hospital",
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              children: [
                 _actionCard(false, Icons.check_circle, const FindDonorsPage()),
                 const SizedBox(height: 8),
                 const Text(
