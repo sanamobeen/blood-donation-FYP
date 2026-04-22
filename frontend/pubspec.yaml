@@ -43,6 +43,11 @@ dependencies:
   http: ^1.2.0
   shared_preferences: ^2.2.2
 
+  # Map and location packages
+  geolocator: ^10.1.0
+  geocoding: ^2.1.1
+  latlong2: ^0.9.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

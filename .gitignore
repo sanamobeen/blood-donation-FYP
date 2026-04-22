@@ -144,6 +144,9 @@ frontend/macos/Flutter/ephemeral/
 frontend/macos/.dart_tool/
 frontend/macos/.symlinks/
 frontend/macos/Pods/
+frontend/macos/Flutter/GeneratedPluginRegistrant.swift
+frontend/macos/.flutter-plugins
+frontend/macos/.flutter-plugins-dependencies
 
 # Web
 frontend/web/.dart_tool/
@@ -154,6 +157,10 @@ frontend/linux/flutter/ephemeral/
 
 # Windows
 frontend/windows/flutter/ephemeral/
+frontend/windows/flutter/generated_plugin_registrant.cc
+frontend/windows/flutter/generated_plugins.cmake
+frontend/windows/.flutter-plugins
+frontend/windows/.flutter-plugins-dependencies
 
 # Test coverage
 frontend/coverage/
