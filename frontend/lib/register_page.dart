@@ -298,7 +298,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
         // Blood Group
         DropdownButtonFormField<String>(
-          value: _selectedBloodGroup,
+          initialValue: _selectedBloodGroup,
           decoration: InputDecoration(
             labelText: _selectedLanguage == 'ur' ? 'بلڈ گروپ' : 'Blood Group',
             labelStyle: TextStyle(color: Colors.red.shade900),
@@ -315,9 +315,11 @@ class _RegisterPageState extends State<RegisterPage> {
             );
           }).toList(),
           onChanged: (value) {
-            setState(() {
-              _selectedBloodGroup = value!;
-            });
+            if (value != null) {
+              setState(() {
+                _selectedBloodGroup = value;
+              });
+            }
           },
         ),
         const SizedBox(height: 16),
@@ -368,7 +370,7 @@ class _RegisterPageState extends State<RegisterPage> {
       children: [
         // Province
         DropdownButtonFormField<String>(
-          value: _selectedProvince,
+          initialValue: _selectedProvince,
           decoration: InputDecoration(
             labelText: _selectedLanguage == 'ur' ? 'صوبہ' : 'Province',
             labelStyle: TextStyle(color: Colors.red.shade900),
@@ -385,17 +387,19 @@ class _RegisterPageState extends State<RegisterPage> {
             );
           }).toList(),
           onChanged: (value) {
-            setState(() {
-              _selectedProvince = value!;
-              _selectedDistrict = MockDonorData.getDistricts(value!).first;
-            });
+            if (value != null) {
+              setState(() {
+                _selectedProvince = value;
+                _selectedDistrict = MockDonorData.getDistricts(value).first;
+              });
+            }
           },
         ),
         const SizedBox(height: 16),
 
         // District
         DropdownButtonFormField<String>(
-          value: _selectedDistrict,
+          initialValue: _selectedDistrict,
           decoration: InputDecoration(
             labelText: _selectedLanguage == 'ur' ? 'ضلع' : 'District',
             labelStyle: TextStyle(color: Colors.red.shade900),
@@ -412,9 +416,11 @@ class _RegisterPageState extends State<RegisterPage> {
             );
           }).toList(),
           onChanged: (value) {
-            setState(() {
-              _selectedDistrict = value!;
-            });
+            if (value != null) {
+              setState(() {
+                _selectedDistrict = value;
+              });
+            }
           },
         ),
         const SizedBox(height: 16),

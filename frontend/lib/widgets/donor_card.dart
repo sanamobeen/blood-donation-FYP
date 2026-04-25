@@ -270,7 +270,7 @@ class DonorCard extends StatelessWidget {
                     'Call',
                     Colors.green,
                     () {
-                      // TODO: Implement call functionality
+                      // Future: Implement actual call functionality using url_launcher
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text('Calling ${donor.phone}...'),
@@ -288,7 +288,7 @@ class DonorCard extends StatelessWidget {
                     'Message',
                     Colors.blue,
                     () {
-                      // TODO: Implement message functionality
+                      // Future: Implement actual message functionality using SMS/email
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text('Messaging ${donor.name}...'),
