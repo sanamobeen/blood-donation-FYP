@@ -2,7 +2,7 @@ import '../models/donor_model.dart';
 import '../utils/mock_data.dart';
 
 class DonorService {
-  // TODO: Replace with actual API endpoint
+  // Replace with actual API endpoint when backend is ready
   static const String baseUrl = 'http://your-backend-api.com';
 
   // Fetch donors from API (future implementation)
