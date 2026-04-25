@@ -4,6 +4,7 @@ import 'find_donor.dart';
 import 'edit_profile_page.dart';
 import 'blood_donation_form_page.dart';
 import 'feedback_page.dart';
+import 'register_page.dart';
 import 'services/language_service.dart';
 
 class MenuPage extends StatefulWidget {
@@ -69,6 +70,21 @@ class _MenuPageState extends State<MenuPage> {
             // Manage Your Experience Card
             _buildExperienceCard(context),
             const SizedBox(height: 16),
+
+            // Register
+            _buildMenuItem(
+              context,
+              icon: Icons.person_add,
+              title: _selectedLanguage == 'ur' ? 'رجسٹر کریں' : 'Register',
+              color: Colors.red.shade700,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const RegisterPage()),
+                );
+              },
+            ),
+            const SizedBox(height: 8),
 
             // Find Volunteers
             _buildMenuItem(
