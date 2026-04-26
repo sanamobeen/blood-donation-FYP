@@ -466,7 +466,6 @@ I'm learning every day to serve you better!''';
                               color: Colors.grey.shade500,
                             ),
                             onPressed: () {
-                              // TODO: Add emoji picker
                             },
                           ),
                         ],
