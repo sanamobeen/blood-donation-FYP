@@ -459,19 +459,6 @@ class ProfilePage extends StatelessWidget {
         _buildActionButton(
           context,
           isDark,
-          "Settings",
-          Icons.settings,
-          Colors.grey,
-          () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Settings coming soon!')),
-            );
-          },
-        ),
-        const SizedBox(height: 8),
-        _buildActionButton(
-          context,
-          isDark,
           "Logout",
           Icons.logout,
           Colors.red,
