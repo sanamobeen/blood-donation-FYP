@@ -78,29 +78,13 @@ class _LandingPageState extends State<LandingPage> {
         ),
         actions: [
           // Notification Icon
-          Stack(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.notifications_outlined, color: Colors.white),
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Notifications coming soon!')),
-                  );
-                },
-              ),
-              Positioned(
-                top: 8,
-                right: 8,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-            ],
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Notifications coming soon!')),
+              );
+            },
           ),
           // Theme Toggle
           _themeToggle(),
@@ -125,7 +109,7 @@ class _LandingPageState extends State<LandingPage> {
             _quickActionsCard(isSmallScreen),
             _imageCarousel(isDark),
             _whyChooseUsSection(isDark),
-            const SizedBox(height: 80),
+            const SizedBox(height: 20),
           ],
         ),
       ),

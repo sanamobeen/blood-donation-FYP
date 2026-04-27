@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'profile_page.dart';
 import 'find_donor.dart';
-import 'edit_profile_page.dart';
 import 'blood_donation_form_page.dart';
 import 'feedback_page.dart';
 import 'register_page.dart';
@@ -156,21 +155,6 @@ class _MenuPageState extends State<MenuPage> {
             ),
             const SizedBox(height: 8),
 
-            // Edit Profile
-            _buildMenuItem(
-              context,
-              icon: Icons.edit,
-              title: _translate('edit_profile'),
-              color: Colors.orange,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const EditProfilePage()),
-                );
-              },
-            ),
-            const SizedBox(height: 8),
-
             // Feedback
             _buildMenuItem(
               context,
@@ -195,18 +179,6 @@ class _MenuPageState extends State<MenuPage> {
               onTap: () {
                 _showFAQsDialog(context);
               },
-            ),
-            const SizedBox(height: 32),
-
-            // App Version
-            Center(
-              child: Text(
-                _translate('app_version'),
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 12,
-                ),
-              ),
             ),
           ],
         ),
