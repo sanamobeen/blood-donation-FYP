@@ -180,18 +180,6 @@ class _MenuPageState extends State<MenuPage> {
                 _showFAQsDialog(context);
               },
             ),
-            const SizedBox(height: 32),
-
-            // App Version
-            Center(
-              child: Text(
-                _translate('app_version'),
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 12,
-                ),
-              ),
-            ),
           ],
         ),
       ),
