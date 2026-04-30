@@ -240,5 +240,27 @@ LOGGING = {
     },
 }
 
+# Email Configuration
+# For development, use Gmail with App Password
+# For production, use services like SendGrid, Mailgun, or AWS SES
+
+# Option 1: Send real emails (Gmail) - requires app password
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = "sanamobin7@gmail.com"
+EMAIL_HOST_PASSWORD = "shyy wxjg jtck refq"
+DEFAULT_FROM_EMAIL = "sanamobin7@gmail.com"
+
+# Option 2: Show emails in console (for testing - uncomment below)
+# EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+EMAIL_SUBJECT_PREFIX = "[Blood Donation]"
+
+# Frontend URL for password reset link
+# For testing with Flutter, this would be your app's deep link or web URL
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
+
 # Create logs directory if it doesn't exist
 (BASE_DIR / "logs").mkdir(exist_ok=True)

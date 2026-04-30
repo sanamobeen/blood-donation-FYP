@@ -377,3 +377,57 @@ class EmailVerification(models.Model):
             return False
         expiration_time = timezone.now() - timezone.timedelta(hours=24)
         return self.created_at > expiration_time
+
+
+# Password Reset Model
+class PasswordReset(models.Model):
+    """
+    Password reset tokens for users who forgot their password.
+    Tokens expire after 1 hour for security.
+    """
+
+    id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(
+        MyUser,
+        on_delete=models.CASCADE,
+        related_name="password_resets",
+        verbose_name="User",
+        help_text="Reference to the user account",
+    )
+    token = models.UUIDField(
+        default=uuid.uuid4,
+        editable=False,
+        unique=True,
+        verbose_name="Reset Token",
+        help_text="Unique token for password reset",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Created At",
+        help_text="Token creation timestamp",
+    )
+    is_used = models.BooleanField(
+        default=False, verbose_name="Used", help_text="Whether the token has been used"
+    )
+
+    class Meta:
+        verbose_name = "Password Reset"
+        verbose_name_plural = "Password Resets"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["token"]),
+            models.Index(fields=["user", "is_used"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.user.email} - {self.token}"
+
+    def is_valid(self) -> bool:
+        """
+        Check if token is valid (not used and not expired - 1 hour).
+        Returns True if token can be used for password reset.
+        """
+        if self.is_used:
+            return False
+        expiration_time = timezone.now() - timezone.timedelta(hours=1)
+        return self.created_at > expiration_time
