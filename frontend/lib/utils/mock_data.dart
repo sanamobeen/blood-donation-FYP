@@ -530,30 +530,60 @@ class MockDonorData {
     return ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
   }
 
-  // Get all unique provinces
+  // Get all unique provinces (matching backend)
   static List<String> getProvinces() {
     return [
-      'Islamabad',
       'Punjab',
       'Sindh',
-      'KPK',
+      'Khyber Pakhtunkhwa',
       'Balochistan',
     ];
   }
 
-  // Get districts by province
+  // Get districts by province (matching backend model)
   static List<String> getDistricts(String province) {
     switch (province) {
-      case 'Islamabad':
-        return ['Islamabad'];
       case 'Punjab':
-        return ['Rawalpindi', 'Lahore', 'Faisalabad', 'Multan', 'Sialkot', 'Gujranwala', 'Sargodha', 'Bahawalpur', 'DG Khan', 'Sahiwal', 'Okara', 'Sheikhupura', 'Jhelum', 'Gujrat', 'Mianwali', 'Bhakkar', 'Khushab'];
+        return [
+          'Lahore',
+          'Faisalabad',
+          'Rawalpindi',
+          'Multan',
+          'Gujranwala',
+          'Sialkot',
+          'Sargodha',
+          'Bahawalpur',
+          'Dera Ghazi Khan',
+          'Sheikhupura',
+          'Khushab',
+        ];
       case 'Sindh':
-        return ['Karachi', 'Hyderabad', 'Sukkur', 'Larkana', 'Mirpurkhas', 'Nawabshah', 'Jacobabad', 'Shikarpur', 'Thatta', 'Badin', 'Khairpur', 'Dadu', 'Qambar'];
-      case 'KPK':
-        return ['Peshawar', 'Mardan', 'Swat', 'Abbottabad', 'Mansehra', 'Haripur', 'Kohat', 'Dera Ismail Khan', 'Bannu', 'Swabi', 'Nowshera', 'Charsadda', 'Malakand', 'Buner', 'Shangla', 'Upper Dir', 'Lower Dir', 'Chitral', 'Batagram', 'Karak'];
+        return [
+          'Karachi',
+          'Hyderabad',
+          'Sukkur',
+          'Larkana',
+          'Mirpurkhas',
+          'Nawabshah',
+        ];
+      case 'Khyber Pakhtunkhwa':
+        return [
+          'Peshawar',
+          'Mardan',
+          'Swat',
+          'Abbottabad',
+          'Mingora',
+          'Kohat',
+          'Dera Ismail Khan',
+        ];
       case 'Balochistan':
-        return ['Quetta', 'Gwadar', 'Turbat', 'Sibi', 'Loralai', 'Zhob', 'Saindak', 'Chagai', 'Kharan', 'Panjgur', 'Jafarabad', 'Jhal Magsi', 'Killa Abdullah', 'Killa Saifullah', 'Loralai', 'Musakhel', 'Sherani', 'Washuk', 'Ziarat'];
+        return [
+          'Quetta',
+          'Gwadar',
+          'Turbat',
+          'Sibi',
+          'Loralai',
+        ];
       default:
         return [];
     }

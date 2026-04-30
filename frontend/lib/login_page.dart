@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'register_page.dart';
 import 'services/language_service.dart';
+import 'menu_page.dart';
+import 'config/api_config.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -41,25 +46,153 @@ class _LoginPageState extends State<LoginPage> {
         _isLoggingIn = true;
       });
 
-      // Simulate login
-      await Future.delayed(const Duration(seconds: 2));
-
-      if (mounted) {
-        setState(() {
-          _isLoggingIn = false;
-        });
-
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_selectedLanguage == 'ur' ? 'لاگ ان کامیاب!' : 'Login successful!'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 3),
-          ),
+      try {
+        // Make API call to backend
+        final response = await http.post(
+          Uri.parse(ApiConfig.loginEndpoint),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'email': _emailController.text.trim().toLowerCase(),
+            'password': _passwordController.text,
+          }),
+        ).timeout(
+          const Duration(seconds: 30),
+          onTimeout: () {
+            throw Exception('Request timeout');
+          },
         );
 
-        // Navigate back or to home
-        Navigator.pop(context);
+        if (response.statusCode == 200) {
+          final responseData = jsonDecode(response.body);
+
+          // Store JWT tokens for future requests
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('access_token', responseData['data']['tokens']['access']);
+          await prefs.setString('refresh_token', responseData['data']['tokens']['refresh']);
+          await prefs.setString('user_email', responseData['data']['user']['email']);
+          await prefs.setString('user_name', responseData['data']['user']['full_name']);
+          await prefs.setBool('is_logged_in', true);
+
+          if (mounted) {
+            setState(() {
+              _isLoggingIn = false;
+            });
+
+            // Show success message
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(_selectedLanguage == 'ur' ? 'لاگ ان کامیاب!' : 'Login successful!'),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 3),
+              ),
+            );
+
+            // Navigate to main menu
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => const MenuPage()),
+            );
+          }
+        } else {
+          final errorData = jsonDecode(response.body);
+          String errorMessage = _selectedLanguage == 'ur'
+              ? 'لاگ ان ناکام ہوئی'
+              : 'Login failed';
+
+          // Parse error messages - backend returns structured errors
+          if (errorData.containsKey('message')) {
+            errorMessage = errorData['message'];
+          }
+
+          // Handle errors field
+          if (errorData.containsKey('errors')) {
+            final errors = errorData['errors'];
+            if (errors is Map && errors.isNotEmpty) {
+              // Check for non_field_errors first (login errors)
+              if (errors.containsKey('non_field_errors')) {
+                final nonFieldErrors = errors['non_field_errors'];
+                if (nonFieldErrors is List && nonFieldErrors.isNotEmpty) {
+                  // Get the first error message
+                  String errorString = nonFieldErrors[0].toString();
+
+                  // Map specific error messages to bilingual versions
+                  if (errorString.contains("Invalid email or password")) {
+                    errorMessage = _selectedLanguage == 'ur'
+                        ? 'غلط ای میل یا پاسورڈ'
+                        : 'Invalid email or password';
+                  } else {
+                    // Use the error message from backend as-is
+                    errorMessage = errorString;
+                  }
+                }
+              } else {
+                // Get first field error
+                final firstError = errors.values.first;
+                if (firstError is List && firstError.isNotEmpty) {
+                  errorMessage = firstError[0].toString();
+                }
+              }
+            }
+          }
+
+          if (mounted) {
+            setState(() {
+              _isLoggingIn = false;
+            });
+
+            // Show error message with OK button
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(errorMessage),
+                backgroundColor: Colors.red,
+                duration: const Duration(seconds: 4),
+                action: SnackBarAction(
+                  label: _selectedLanguage == 'ur' ? 'ٹھیک ہے' : 'OK',
+                  textColor: Colors.white,
+                  onPressed: () {},
+                ),
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        String errorMessage = _selectedLanguage == 'ur'
+            ? 'لاگ ان ناکام ہوئی'
+            : 'Login failed';
+
+        // Determine specific error message
+        if (e.toString().contains('Timeout') || e.toString().contains('timeout')) {
+          errorMessage = _selectedLanguage == 'ur'
+              ? 'سرور سے نہیں جا سکتا'
+              : 'Cannot connect to server';
+        } else if (e.toString().contains('SocketException')) {
+          errorMessage = _selectedLanguage == 'ur'
+              ? 'انٹرنیٹ کنکشن نہیں'
+              : 'No internet connection';
+        } else if (e.toString().contains('Connection') || e.toString().contains('Network')) {
+          errorMessage = _selectedLanguage == 'ur'
+              ? 'نیٹ ورک کا مسئلہ'
+              : 'Network error';
+        }
+
+        if (mounted) {
+          setState(() {
+            _isLoggingIn = false;
+          });
+
+          // Show error message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMessage),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 4),
+              action: SnackBarAction(
+                label: _selectedLanguage == 'ur' ? 'ٹھیک ہے' : 'OK',
+                textColor: Colors.white,
+                onPressed: () {},
+              ),
+            ),
+          );
+        }
       }
     }
   }

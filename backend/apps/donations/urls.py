@@ -4,7 +4,7 @@ from .views import (
     DonationCreateView,
     DonationListView,
     MyDonationsView,
-    AcceptDonationView
+    AcceptDonationView,
 )
 
 urlpatterns = [

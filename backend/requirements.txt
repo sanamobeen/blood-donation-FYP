@@ -9,6 +9,7 @@ djangorestframework-simplejwt==5.3.1
 
 # Database (if needed)
 # psycopg2-binary==2.9.9  # For PostgreSQL
+mysqlclient==2.2.4  # For MySQL
 
 # Development Tools
 python-decouple==3.8
