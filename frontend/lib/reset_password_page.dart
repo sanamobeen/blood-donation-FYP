@@ -44,7 +44,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       try {
         // Make API call to backend
         await http.post(
-          Uri.parse('${ApiConfig.baseUrl}/api/accounts/reset-password/'),
+          Uri.parse(ApiConfig.resetPasswordEndpoint),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({
             'email': widget.email.trim().toLowerCase(),
