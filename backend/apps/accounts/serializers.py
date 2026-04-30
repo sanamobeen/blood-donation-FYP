@@ -356,3 +356,83 @@ class DonorRegistrationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("User is already registered as a donor")
         validated_data["user"] = user
         return super().create(validated_data)
+
+
+# FORGOT PASSWORD SERIALIZER
+class ForgotPasswordSerializer(serializers.Serializer):
+    """
+    Serializer for forgot password requests.
+    Validates email and initiates password reset process.
+    """
+    email = serializers.EmailField(required=True, help_text="User's email address")
+
+    def validate_email(self, value):
+        """
+        Validate that email exists in the system.
+        Returns generic error for security (don't reveal if email exists).
+        """
+        email = value.strip().lower()
+        if not MyUser.objects.filter(email=email).exists():
+            # For security, don't reveal whether email exists
+            # But log it for debugging
+            logger.warning(f"Password reset requested for non-existent email: {email}")
+        return email
+
+
+# RESET PASSWORD SERIALIZER
+class ResetPasswordSerializer(serializers.Serializer):
+    """
+    Serializer for resetting password with token.
+    Validates token and new password.
+    """
+    email = serializers.EmailField(required=True, help_text="User's email address")
+    token = serializers.UUIDField(required=True, help_text="Password reset token")
+    new_password = serializers.CharField(
+        required=True,
+        write_only=True,
+        validators=[validate_password, validate_password_strength],
+        help_text="New password",
+    )
+    confirm_password = serializers.CharField(
+        required=True, write_only=True, help_text="Confirm new password"
+    )
+
+    def validate(self, attrs):
+        """
+        Validate token, password confirmation, and user email.
+        """
+        # Validate password confirmation
+        if attrs["new_password"] != attrs["confirm_password"]:
+            raise serializers.ValidationError(
+                {
+                    "new_password": "Password fields didn't match.",
+                    "confirm_password": "Passwords must be identical",
+                }
+            )
+
+        # Validate email exists
+        email = attrs["email"].strip().lower()
+        try:
+            user = MyUser.objects.get(email=email)
+            attrs["user"] = user
+        except MyUser.DoesNotExist:
+            raise serializers.ValidationError(
+                {"email": "No user found with this email address"}
+            )
+
+        # Validate token
+        from .models import PasswordReset
+
+        try:
+            reset = PasswordReset.objects.get(token=attrs["token"], user=user)
+            if not reset.is_valid():
+                raise serializers.ValidationError(
+                    {"token": "Token has expired or already used. Please request a new one."}
+                )
+            attrs["reset"] = reset
+        except PasswordReset.DoesNotExist:
+            raise serializers.ValidationError(
+                {"token": "Invalid token. Please request a new password reset."}
+            )
+
+        return attrs

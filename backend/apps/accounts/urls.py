@@ -9,6 +9,8 @@ from .views import (
     LogoutView,
     SendVerificationEmailView,
     VerifyEmailView,
+    ForgotPasswordView,
+    ResetPasswordView,
 )
 
 urlpatterns = [
@@ -22,4 +24,6 @@ urlpatterns = [
     ),
     path("verify/send/", SendVerificationEmailView.as_view(), name="send_verification"),
     path("verify/", VerifyEmailView.as_view(), name="verify_email"),
+    path("forgot-password/", ForgotPasswordView.as_view(), name="forgot_password"),
+    path("reset-password/", ResetPasswordView.as_view(), name="reset_password"),
 ]
