@@ -30,9 +30,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       });
 
       try {
-        // Make API call to backend (update endpoint as needed)
-        await http.post(
-          Uri.parse('${ApiConfig.baseUrl}/api/accounts/forgot-password/'),
+        // Make API call to backend
+        final response = await http.post(
+          Uri.parse(ApiConfig.forgotPasswordEndpoint),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({
             'email': _emailController.text.trim().toLowerCase(),
@@ -48,25 +48,17 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           _isSending = false;
         });
 
-        // Show success message and navigate to reset password page
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                _selectedLanguage == 'ur'
-                    ? 'ای میل کی تصدیق ہو گئی'
-                    : 'Email verified successfully',
-              ),
-              backgroundColor: Colors.green,
-              duration: const Duration(seconds: 2),
-            ),
-          );
+        // Parse response to get token
+        final responseData = jsonDecode(response.body);
+        final String? token = responseData['data']?['token'];
 
-          // Navigate to reset password page
+        // Navigate directly to reset password page without showing success message
+        if (mounted) {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
               builder: (context) => ResetPasswordPage(
                 email: _emailController.text.trim(),
+                token: token,
               ),
             ),
           );

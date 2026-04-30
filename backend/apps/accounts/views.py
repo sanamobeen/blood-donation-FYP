@@ -429,8 +429,7 @@ Blood Donation Team
                     message="Password reset link has been sent to your email",
                     data={
                         "email": email,
-                        # Token is logged in console for development
-                        # "token": str(reset.token),  # Uncomment for testing only
+                        "token": str(reset.token),  # Include token for testing (remove in production)
                     },
                     status_code=status.HTTP_200_OK,
                 )

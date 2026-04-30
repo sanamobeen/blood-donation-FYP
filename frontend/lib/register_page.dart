@@ -33,11 +33,17 @@ class _RegisterPageState extends State<RegisterPage> {
   String _selectedDistrict = 'Lahore';  // First district in Punjab
   bool _agreeToTerms = false;
   bool _isRegistering = false;
+  bool _isPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
 
   // Field-specific error messages
   Map<String, String> _fieldErrors = {};
 
   final _formKey = GlobalKey<FormState>();
+  // Individual form keys for each step validation
+  final _personalInfoKey = GlobalKey<FormState>();
+  final _contactInfoKey = GlobalKey<FormState>();
+  final _confirmationKey = GlobalKey<FormState>();
 
   @override
   void initState() {
@@ -270,11 +276,105 @@ class _RegisterPageState extends State<RegisterPage> {
   int _currentStep = 1;
 
   void _nextStep() {
-    if (_currentStep < 3) {
+    // Validate current step before proceeding
+    bool isValid = false;
+
+    switch (_currentStep) {
+      case 1:
+        isValid = _validatePersonalInfo();
+        break;
+      case 2:
+        isValid = _validateContactInfo();
+        break;
+      case 3:
+        // Step 3 (Confirmation) - submit form, no next step
+        return;
+    }
+
+    if (isValid && _currentStep < 3) {
       setState(() {
         _currentStep++;
       });
     }
+  }
+
+  // Validate Personal Information card
+  bool _validatePersonalInfo() {
+    bool isValid = true;
+    List<String> errors = [];
+
+    // Validate name
+    if (_nameController.text.trim().isEmpty) {
+      errors.add(_selectedLanguage == 'ur' ? 'نام درج کریں' : 'Please enter your name');
+      isValid = false;
+    }
+
+    // Validate gender (has default value, so always valid)
+    // Validate blood group (has default value, so always valid)
+
+    // Validate date of birth
+    if (_dobController.text.trim().isEmpty) {
+      errors.add(_selectedLanguage == 'ur' ? 'تاریخ پیدائش منتخب کریں' : 'Please select date of birth');
+      isValid = false;
+    }
+
+    if (!isValid) {
+      _showValidationError(errors.first);
+    }
+
+    return isValid;
+  }
+
+  // Validate Contact Information card
+  bool _validateContactInfo() {
+    bool isValid = true;
+    List<String> errors = [];
+
+    // Validate email
+    if (_emailController.text.trim().isEmpty) {
+      errors.add(_selectedLanguage == 'ur' ? 'ای میل درج کریں' : 'Please enter your email');
+      isValid = false;
+    } else if (!_emailController.text.contains('@')) {
+      errors.add(_selectedLanguage == 'ur' ? 'درست ای میل درج کریں' : 'Please enter a valid email');
+      isValid = false;
+    }
+
+    // Validate phone
+    if (_phoneController.text.trim().isEmpty) {
+      errors.add(_selectedLanguage == 'ur' ? 'فون نمبر درج کریں' : 'Please enter your phone number');
+      isValid = false;
+    }
+
+    // Validate province (has default, so always valid)
+    // Validate district (has default, so always valid)
+
+    // Validate local level
+    if (_localLevelController.text.trim().isEmpty) {
+      errors.add(_selectedLanguage == 'ur' ? 'مقامی سطح درج کریں' : 'Please enter local level');
+      isValid = false;
+    }
+
+    if (!isValid) {
+      _showValidationError(errors.first);
+    }
+
+    return isValid;
+  }
+
+  // Show validation error message
+  void _showValidationError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 3),
+        action: SnackBarAction(
+          label: _selectedLanguage == 'ur' ? 'ٹھیک ہے' : 'OK',
+          textColor: Colors.white,
+          onPressed: () {},
+        ),
+      ),
+    );
   }
 
   void _previousStep() {
@@ -449,30 +549,32 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Widget _buildPersonalInfoCard(bool isDark) {
-    return _buildCard(
-      isDark,
-      title: _selectedLanguage == 'ur' ? 'ذاتی معلومات' : 'Personal Information',
-      icon: Icons.person,
-      children: [
-        // Full Name
-        TextFormField(
-          controller: _nameController,
-          decoration: InputDecoration(
-            labelText: _selectedLanguage == 'ur' ? 'پورا نام' : 'Full Name',
-            labelStyle: TextStyle(color: Colors.red.shade900),
-            border: const OutlineInputBorder(),
-            focusedBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: Colors.red.shade900, width: 2),
+    return Form(
+      key: _personalInfoKey,
+      child: _buildCard(
+        isDark,
+        title: _selectedLanguage == 'ur' ? 'ذاتی معلومات' : 'Personal Information',
+        icon: Icons.person,
+        children: [
+          // Full Name
+          TextFormField(
+            controller: _nameController,
+            decoration: InputDecoration(
+              labelText: _selectedLanguage == 'ur' ? 'پورا نام' : 'Full Name',
+              labelStyle: TextStyle(color: Colors.red.shade900),
+              border: const OutlineInputBorder(),
+              focusedBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.red.shade900, width: 2),
+              ),
+              prefixIcon: Icon(Icons.person, color: Colors.red.shade900),
             ),
-            prefixIcon: Icon(Icons.person, color: Colors.red.shade900),
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return _selectedLanguage == 'ur' ? 'براہ کرم نام درج کریں' : 'Please enter your name';
+              }
+              return null;
+            },
           ),
-          validator: (value) {
-            if (value == null || value.trim().isEmpty) {
-              return _selectedLanguage == 'ur' ? 'براہ کرم نام درج کریں' : 'Please enter your name';
-            }
-            return null;
-          },
-        ),
         const SizedBox(height: 16),
 
         // Gender
@@ -565,15 +667,18 @@ class _RegisterPageState extends State<RegisterPage> {
           },
         ),
       ],
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildContactInfoCard(bool isDark) {
-    return _buildCard(
-      isDark,
-      title: _selectedLanguage == 'ur' ? 'رابطہ کی معلومات' : 'Contact Information',
-      icon: Icons.contact_phone,
-      children: [
+    return Form(
+      key: _contactInfoKey,
+      child: _buildCard(
+        isDark,
+        title: _selectedLanguage == 'ur' ? 'رابطہ کی معلومات' : 'Contact Information',
+        icon: Icons.contact_phone,
+        children: [
         // Province
         DropdownButtonFormField<String>(
           initialValue: _selectedProvince,
@@ -720,7 +825,7 @@ class _RegisterPageState extends State<RegisterPage> {
         // Password
         TextFormField(
           controller: _passwordController,
-          obscureText: true,
+          obscureText: !_isPasswordVisible,
           decoration: InputDecoration(
             labelText: _selectedLanguage == 'ur' ? 'پاسورڈ' : 'Password',
             labelStyle: TextStyle(color: Colors.red.shade900),
@@ -729,7 +834,17 @@ class _RegisterPageState extends State<RegisterPage> {
               borderSide: BorderSide(color: Colors.red.shade900, width: 2),
             ),
             prefixIcon: Icon(Icons.lock, color: Colors.red.shade900),
-            suffixIcon: Icon(Icons.visibility_off, color: Colors.grey),
+            suffixIcon: IconButton(
+              icon: Icon(
+                _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                color: Colors.red.shade900,
+              ),
+              onPressed: () {
+                setState(() {
+                  _isPasswordVisible = !_isPasswordVisible;
+                });
+              },
+            ),
             errorText: _getFieldError('password'),
             errorBorder: OutlineInputBorder(
               borderSide: BorderSide(color: _hasFieldError('password') ? Colors.red : Colors.grey.shade900, width: 2),
@@ -768,7 +883,7 @@ class _RegisterPageState extends State<RegisterPage> {
         // Confirm Password
         TextFormField(
           controller: _confirmPasswordController,
-          obscureText: true,
+          obscureText: !_isConfirmPasswordVisible,
           decoration: InputDecoration(
             labelText: _selectedLanguage == 'ur' ? 'پاسورڈ تصدیق کریں' : 'Confirm Password',
             labelStyle: TextStyle(color: Colors.red.shade900),
@@ -777,12 +892,27 @@ class _RegisterPageState extends State<RegisterPage> {
               borderSide: BorderSide(color: Colors.red.shade900, width: 2),
             ),
             prefixIcon: Icon(Icons.lock_outline, color: Colors.red.shade900),
-            suffixIcon: _confirmPasswordController.text.isNotEmpty &&
-                        _passwordController.text.isNotEmpty &&
-                        _confirmPasswordController.text == _passwordController.text &&
-                        !_hasFieldError('confirm_password')
-                    ? Icon(Icons.check_circle, color: Colors.green, size: 20)
-                    : Icon(Icons.visibility_off, color: Colors.grey),
+            suffixIcon: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (_confirmPasswordController.text.isNotEmpty &&
+                    _passwordController.text.isNotEmpty &&
+                    _confirmPasswordController.text == _passwordController.text &&
+                    !_hasFieldError('confirm_password'))
+                  Icon(Icons.check_circle, color: Colors.green, size: 20),
+                IconButton(
+                  icon: Icon(
+                    _isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                    color: Colors.red.shade900,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                    });
+                  },
+                ),
+              ],
+            ),
             errorText: _getFieldError('confirm_password') ?? _validatePasswordMatching(_confirmPasswordController.text),
             errorBorder: OutlineInputBorder(
               borderSide: BorderSide(color: (_hasFieldError('confirm_password') || _validatePasswordMatching(_confirmPasswordController.text) != null) ? Colors.red : Colors.grey.shade900, width: 2),
@@ -823,15 +953,18 @@ class _RegisterPageState extends State<RegisterPage> {
           },
         ),
       ],
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildConfirmationCard(bool isDark) {
-    return _buildCard(
-      isDark,
-      title: _selectedLanguage == 'ur' ? 'تصدیق' : 'Confirmation',
-      icon: Icons.check_circle,
-      children: [
+    return Form(
+      key: _confirmationKey,
+      child: _buildCard(
+        isDark,
+        title: _selectedLanguage == 'ur' ? 'تصدیق' : 'Confirmation',
+        icon: Icons.check_circle,
+        children: [
         // Summary Section
         Container(
           padding: const EdgeInsets.all(16),
@@ -918,8 +1051,9 @@ class _RegisterPageState extends State<RegisterPage> {
           ],
         ),
       ],
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildSummaryRow(String label, String value) {
     return Padding(

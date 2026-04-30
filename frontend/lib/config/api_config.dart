@@ -31,6 +31,8 @@ class ApiConfig {
   static String get logoutEndpoint => '$baseUrl/api/accounts/logout/';
   static String get profileEndpoint => '$baseUrl/api/accounts/profile/';
   static String get donorRegisterEndpoint => '$baseUrl/api/accounts/donor/register/';
+  static String get forgotPasswordEndpoint => '$baseUrl/api/accounts/forgot-password/';
+  static String get resetPasswordEndpoint => '$baseUrl/api/accounts/reset-password/';
 
   // Timeout duration
   static const Duration connectTimeout = Duration(seconds: 30);
