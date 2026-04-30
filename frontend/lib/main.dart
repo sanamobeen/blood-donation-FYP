@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'theme_provider.dart';
 import 'splash_screen.dart';
+import 'menu_page.dart';
+import 'login_page.dart';
+import 'register_page.dart';
 
 void main() {
   runApp(const BloodDonationApp());
@@ -35,6 +38,11 @@ class BloodDonationApp extends StatelessWidget {
           ),
           themeMode: mode,
           home: const SplashScreen(),
+          routes: {
+            '/menu': (context) => const MenuPage(),
+            '/login': (context) => const LoginPage(),
+            '/register': (context) => const RegisterPage(),
+          },
         );
       },
     );

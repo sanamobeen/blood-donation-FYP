@@ -10,6 +10,7 @@ def get_tokens_for_user(user):
         "access": str(refresh.access_token),
     }
 
+
 def calculate_distance(lat1, lon1, lat2, lon2):
     R = 6371
 

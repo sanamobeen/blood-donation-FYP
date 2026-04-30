@@ -4,7 +4,7 @@ from .views import (
     BloodRequestCreateView,
     BloodRequestListView,
     MyBloodRequestsView,
-    BloodRequestDetailView
+    BloodRequestDetailView,
 )
 
 urlpatterns = [

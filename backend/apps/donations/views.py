@@ -15,19 +15,22 @@ class DonationCreateView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         donation = serializer.save()
 
-        return Response({
-            "message": "Donation record created successfully",
-            "donation": DonationListSerializer(donation).data,
-        }, status=status.HTTP_201_CREATED)
+        return Response(
+            {
+                "message": "Donation record created successfully",
+                "donation": DonationListSerializer(donation).data,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class DonationListView(generics.ListAPIView):
     serializer_class = DonationListSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ['status', 'donation_date']
-    ordering_fields = ['created_at', 'donation_date']
-    ordering = ['-created_at']
+    filterset_fields = ["status", "donation_date"]
+    ordering_fields = ["created_at", "donation_date"]
+    ordering = ["-created_at"]
 
     def get_queryset(self):
         return Donation.objects.all()
@@ -53,21 +56,25 @@ class AcceptDonationView(generics.UpdateAPIView):
         try:
             donation = Donation.objects.get(pk=pk)
         except Donation.DoesNotExist:
-            return Response({
-                "error": "Donation record not found"
-            }, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "Donation record not found"}, status=status.HTTP_404_NOT_FOUND
+            )
 
         # Check if the current user is the donor
         if donation.donor.user != request.user:
-            return Response({
-                "error": "You can only accept your own donation requests"
-            }, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {"error": "You can only accept your own donation requests"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         # Update donation status
-        donation.status = 'accepted'
+        donation.status = "accepted"
         donation.save()
 
-        return Response({
-            "message": "Donation accepted successfully",
-            "donation": DonationListSerializer(donation).data,
-        }, status=status.HTTP_200_OK)
+        return Response(
+            {
+                "message": "Donation accepted successfully",
+                "donation": DonationListSerializer(donation).data,
+            },
+            status=status.HTTP_200_OK,
+        )
