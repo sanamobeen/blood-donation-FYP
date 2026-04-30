@@ -6,6 +6,7 @@ import 'register_page.dart';
 import 'services/language_service.dart';
 import 'menu_page.dart';
 import 'config/api_config.dart';
+import 'forgot_password_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -198,34 +199,9 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _forgotPassword() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(_selectedLanguage == 'ur' ? 'پاسورڈ بھول گئے؟' : 'Forgot Password?'),
-        content: Text(
-          _selectedLanguage == 'ur'
-              ? 'براہ کرم اپنا ای میل درج کریں ہم آپ کو پاسورڈ دوبارہ سیٹ کرنے کا لنک بھیج دیں گے۔'
-              : 'Please enter your email. We will send you a link to reset your password.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(_selectedLanguage == 'ur' ? 'منسوخ کریں' : 'Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(_selectedLanguage == 'ur' ? 'لنک بھیج دیا گیا' : 'Link sent!'),
-                  backgroundColor: Colors.green,
-                ),
-              );
-            },
-            child: Text(_selectedLanguage == 'ur' ? 'بھیجیں' : 'Send'),
-          ),
-        ],
-      ),
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const ForgotPasswordPage()),
     );
   }
 
