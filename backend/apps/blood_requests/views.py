@@ -14,19 +14,22 @@ class BloodRequestCreateView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         blood_request = serializer.save()
 
-        return Response({
-            "message": "Blood request created successfully",
-            "blood_request": BloodRequestSerializer(blood_request).data,
-        }, status=status.HTTP_201_CREATED)
+        return Response(
+            {
+                "message": "Blood request created successfully",
+                "blood_request": BloodRequestSerializer(blood_request).data,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class BloodRequestListView(generics.ListAPIView):
     serializer_class = BloodRequestListSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ['blood_group', 'urgency_level', 'city', 'status']
-    ordering_fields = ['created_at', 'urgency_level']
-    ordering = ['-created_at']
+    filterset_fields = ["blood_group", "urgency_level", "city", "status"]
+    ordering_fields = ["created_at", "urgency_level"]
+    ordering = ["-created_at"]
 
     def get_queryset(self):
         return BloodRequest.objects.all()

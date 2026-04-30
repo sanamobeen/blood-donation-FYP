@@ -116,10 +116,9 @@ class AppTranslations {
       'total_time': 'Total: ~45 minutes',
 
       // Provinces
-      'islamabad': 'Islamabad',
       'punjab': 'Punjab',
       'sindh': 'Sindh',
-      'kpk': 'KPK',
+      'khyber_pakhtunkhwa': 'Khyber Pakhtunkhwa',
       'balochistan': 'Balochistan',
 
       // App Info
@@ -219,10 +218,9 @@ class AppTranslations {
       'total_time': 'کل: ~45 منٹ',
 
       // Provinces
-      'islamabad': 'اسلام آباد',
       'punjab': 'پنجاب',
       'sindh': 'سندھ',
-      'kpk': 'خیبر پختونخوا',
+      'khyber_pakhtunkhwa': 'خیبر پختونخوا',
       'balochistan': 'بلوچستان',
 
       // App Info
