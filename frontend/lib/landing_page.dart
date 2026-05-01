@@ -8,6 +8,7 @@ import 'menu_page.dart';
 import 'profile_page.dart';
 import 'theme_provider.dart';
 import 'blood_donation_form_page.dart';
+import 'my_blood_requests_page.dart';
 
 class LandingPage extends StatefulWidget {
   const LandingPage({super.key});
@@ -93,6 +94,7 @@ class _LandingPageState extends State<LandingPage> {
             _navButton("Home", Icons.home, null),
             _navButton("Find donor", Icons.search, const FindDonorsPage()),
             _navButton("Blood Request", Icons.favorite, const EmergencyPage()),
+            _navButton("My Requests", Icons.list_alt, const MyBloodRequestsPage()),
             _navButton("AI Assistant", Icons.auto_awesome, const AIAssistantPage()),
             _navButton("Login", Icons.login, const LoginPage()),
             _actionButton("Register", Icons.person_add, const RegisterPage(), Colors.white, Colors.red.shade900),
@@ -228,32 +230,53 @@ class _LandingPageState extends State<LandingPage> {
   Widget _quickActionsCard(bool isSmall) {
     return Padding(
       padding: const EdgeInsets.all(20),
-      child: Row(
+      child: Column(
         children: [
-          Expanded(
-            child: Column(
-              children: [
-                _actionCard(false, _buildBloodDropWithPlus(), const BloodDonationFormPage()),
-                const SizedBox(height: 8),
-                const Text(
-                  "Add Request",
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  children: [
+                    _actionCard(false, _buildBloodDropWithPlus(), const BloodDonationFormPage()),
+                    const SizedBox(height: 8),
+                    const Text(
+                      "Add Request",
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  children: [
+                    _actionCard(false, Icons.check_circle, const FindDonorsPage()),
+                    const SizedBox(height: 8),
+                    const Text(
+                      "Nearby Donor",
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              children: [
-                _actionCard(false, Icons.check_circle, const FindDonorsPage()),
-                const SizedBox(height: 8),
-                const Text(
-                  "Nearby Donor",
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  children: [
+                    _actionCard(false, Icons.list_alt, const MyBloodRequestsPage()),
+                    const SizedBox(height: 8),
+                    const Text(
+                      "My Requests",
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),
