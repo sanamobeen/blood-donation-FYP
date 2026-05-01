@@ -1,5 +1,5 @@
 from django.db import models
-from apps.accounts.models import MyUser, BLOOD_GROUPS, URGENCY_LEVELS
+from apps.accounts.models import MyUser, Province, District, LocalLevel, Gender, BloodGroup
 
 REQUEST_STATUS = [
     ("pending", "Pending"),
@@ -17,11 +17,25 @@ class BloodRequest(models.Model):
     )
     patient_name = models.CharField(max_length=100)
     emergency_contact = models.CharField(max_length=15)
-    blood_group = models.CharField(max_length=3, choices=BLOOD_GROUPS)
+    blood_group = models.ForeignKey(
+        BloodGroup, on_delete=models.CASCADE, related_name="blood_requests"
+    )
+    gender = models.ForeignKey(
+        Gender, on_delete=models.CASCADE, related_name="blood_requests"
+    )
+    province = models.ForeignKey(
+        Province, on_delete=models.CASCADE, related_name="blood_requests", blank=True, null=True
+    )
+    district = models.ForeignKey(
+        District, on_delete=models.CASCADE, related_name="blood_requests", blank=True, null=True
+    )
+    local_level = models.ForeignKey(
+        LocalLevel, on_delete=models.CASCADE, related_name="blood_requests", blank=True, null=True
+    )
     units_required = models.IntegerField()
-    urgency_level = models.CharField(max_length=20, choices=URGENCY_LEVELS)
-    city = models.CharField(max_length=100)
-    hospital_name = models.CharField(max_length=200)
+    required_date = models.DateField(blank=True, null=True)
+    required_time = models.TimeField(blank=True, null=True)
+    case = models.TextField(blank=True, null=True)
     status = models.CharField(max_length=30, choices=REQUEST_STATUS, default="pending")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

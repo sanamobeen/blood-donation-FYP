@@ -27,8 +27,8 @@ class BloodRequestListView(generics.ListAPIView):
     serializer_class = BloodRequestListSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ["blood_group", "urgency_level", "city", "status"]
-    ordering_fields = ["created_at", "urgency_level"]
+    filterset_fields = ["blood_group", "status", "province", "district", "gender"]
+    ordering_fields = ["created_at", "required_date", "units_required"]
     ordering = ["-created_at"]
 
     def get_queryset(self):

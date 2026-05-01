@@ -11,6 +11,11 @@ from .views import (
     VerifyEmailView,
     ForgotPasswordView,
     ResetPasswordView,
+    ProvinceListView,
+    DistrictListView,
+    LocalLevelListView,
+    GenderListView,
+    BloodGroupListView,
 )
 
 urlpatterns = [
@@ -26,4 +31,10 @@ urlpatterns = [
     path("verify/", VerifyEmailView.as_view(), name="verify_email"),
     path("forgot-password/", ForgotPasswordView.as_view(), name="forgot_password"),
     path("reset-password/", ResetPasswordView.as_view(), name="reset_password"),
+    # Location endpoints
+    path("locations/provinces/", ProvinceListView.as_view(), name="province_list"),
+    path("locations/districts/", DistrictListView.as_view(), name="district_list"),
+    path("locations/local-levels/", LocalLevelListView.as_view(), name="local_level_list"),
+    path("locations/genders/", GenderListView.as_view(), name="gender_list"),
+    path("locations/blood-groups/", BloodGroupListView.as_view(), name="blood_group_list"),
 ]

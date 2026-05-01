@@ -1,6 +1,20 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import MyUser
+from .models import MyUser, Province, District, LocalLevel, Gender, BloodGroup
+
+
+@admin.register(BloodGroup)
+class BloodGroupAdmin(admin.ModelAdmin):
+    list_display = ("name",)
+    search_fields = ("name",)
+    ordering = ("name",)
+
+
+@admin.register(Gender)
+class GenderAdmin(admin.ModelAdmin):
+    list_display = ("name",)
+    search_fields = ("name",)
+    ordering = ("name",)
 
 
 @admin.register(MyUser)
@@ -53,3 +67,27 @@ class MyUserAdmin(UserAdmin):
             },
         ),
     )
+
+
+@admin.register(Province)
+class ProvinceAdmin(admin.ModelAdmin):
+    list_display = ("name", "code")
+    search_fields = ("name", "code")
+    ordering = ("name",)
+
+
+@admin.register(District)
+class DistrictAdmin(admin.ModelAdmin):
+    list_display = ("name", "province")
+    list_filter = ("province",)
+    search_fields = ("name", "province__name")
+    ordering = ("province", "name")
+
+
+@admin.register(LocalLevel)
+class LocalLevelAdmin(admin.ModelAdmin):
+    list_display = ("name", "district")
+    list_filter = ("district",)
+    search_fields = ("name", "district__name")
+    ordering = ("district", "name")
+

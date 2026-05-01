@@ -8,7 +8,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from django.core.mail import send_mail
 from django.conf import settings
-from .models import MyUser, Donor
+from .models import MyUser, Donor, Province, District, LocalLevel, Gender, BloodGroup
 from .serializers import (
     RegisterSerializer,
     LoginSerializer,
@@ -17,6 +17,11 @@ from .serializers import (
     DonorRegistrationSerializer,
     ForgotPasswordSerializer,
     ResetPasswordSerializer,
+    ProvinceSerializer,
+    DistrictSerializer,
+    LocalLevelSerializer,
+    GenderSerializer,
+    BloodGroupSerializer,
 )
 
 logger = logging.getLogger(__name__)
@@ -518,3 +523,71 @@ class ResetPasswordView(generics.GenericAPIView):
                 message="An unexpected error occurred. Please try again later.",
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+
+# LOCATION VIEWS
+class ProvinceListView(generics.ListAPIView):
+    """
+    List all provinces.
+    Returns all provinces with their codes.
+    """
+    queryset = Province.objects.all()
+    serializer_class = ProvinceSerializer
+    permission_classes = [permissions.AllowAny]
+    pagination_class = None
+
+
+class DistrictListView(generics.ListAPIView):
+    """
+    List all districts, optionally filtered by province.
+    Use ?province=<province_id> to filter by province.
+    """
+    serializer_class = DistrictSerializer
+    permission_classes = [permissions.AllowAny]
+    pagination_class = None
+
+    def get_queryset(self):
+        queryset = District.objects.all()
+        province_id = self.request.query_params.get('province')
+        if province_id:
+            queryset = queryset.filter(province_id=province_id)
+        return queryset
+
+
+class LocalLevelListView(generics.ListAPIView):
+    """
+    List all local levels, optionally filtered by district.
+    Use ?district=<district_id> to filter by district.
+    """
+    serializer_class = LocalLevelSerializer
+    permission_classes = [permissions.AllowAny]
+    pagination_class = None
+
+    def get_queryset(self):
+        queryset = LocalLevel.objects.all()
+        district_id = self.request.query_params.get('district')
+        if district_id:
+            queryset = queryset.filter(district_id=district_id)
+        return queryset
+
+
+class GenderListView(generics.ListAPIView):
+    """
+    List all genders.
+    Returns all available gender options.
+    """
+    queryset = Gender.objects.all()
+    serializer_class = GenderSerializer
+    permission_classes = [permissions.AllowAny]
+    pagination_class = None
+
+
+class BloodGroupListView(generics.ListAPIView):
+    """
+    List all blood groups.
+    Returns all available blood group options.
+    """
+    queryset = BloodGroup.objects.all()
+    serializer_class = BloodGroupSerializer
+    permission_classes = [permissions.AllowAny]
+    pagination_class = None
