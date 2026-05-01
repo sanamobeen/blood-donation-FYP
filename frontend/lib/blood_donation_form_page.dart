@@ -34,12 +34,10 @@ class _BloodDonationFormPageState extends State<BloodDonationFormPage> {
   TimeOfDay? _selectedTime;
   int? _selectedProvinceId;
   int? _selectedDistrictId;
-  int? _selectedLocalLevelId;
 
   // API Data Lists
   List<Province> _provinces = [];
   List<District> _districts = [];
-  List<LocalLevel> _localLevels = [];
   List<BloodGroup> _bloodGroups = [];
   List<Gender> _genders = [];
 
@@ -64,8 +62,19 @@ class _BloodDonationFormPageState extends State<BloodDonationFormPage> {
       // Load provinces
       final provincesResult = await BloodRequestService.getProvinces();
       if (provincesResult.success && provincesResult.provinces != null) {
+        // Sort provinces in the desired order: Punjab, Sindh, KPK, Balochistan
+        final provinceOrder = ['Punjab', 'Sindh', 'Khyber Pakhtunkhwa', 'Balochistan'];
+        final sortedProvinces = List<Province>.from(provincesResult.provinces!);
+        sortedProvinces.sort((a, b) {
+          int indexA = provinceOrder.indexOf(a.name);
+          int indexB = provinceOrder.indexOf(b.name);
+          if (indexA == -1) indexA = 999;
+          if (indexB == -1) indexB = 999;
+          return indexA.compareTo(indexB);
+        });
+
         setState(() {
-          _provinces = provincesResult.provinces!;
+          _provinces = sortedProvinces;
         });
       }
 
@@ -99,17 +108,6 @@ class _BloodDonationFormPageState extends State<BloodDonationFormPage> {
     if (result.success && result.districts != null) {
       setState(() {
         _districts = result.districts!;
-        _selectedLocalLevelId = null;
-        _localLevels = [];
-      });
-    }
-  }
-
-  Future<void> _loadLocalLevels(int districtId) async {
-    final result = await BloodRequestService.getLocalLevels(districtId);
-    if (result.success && result.localLevels != null) {
-      setState(() {
-        _localLevels = result.localLevels!;
       });
     }
   }
@@ -188,13 +186,36 @@ class _BloodDonationFormPageState extends State<BloodDonationFormPage> {
               const SizedBox(height: 12),
               _buildTextField(
                 isDark,
-                "Contact Person",
+                "Emergency Contact",
                 Icons.contact_phone,
                 _contactPersonController,
+                keyboardType: TextInputType.phone,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return "Please enter contact person";
+                    return "Please enter emergency contact";
                   }
+                  // Remove all non-digit characters for validation
+                  final digitsOnly = value.replaceAll(RegExp(r'[^\d]'), '');
+
+                  // Check if it's a valid Pakistan phone number
+                  // Format: +92-3XX-XXXXXXX or 03XX-XXXXXXX
+                  if (digitsOnly.length < 10 || digitsOnly.length > 13) {
+                    return "Please enter a valid Pakistan phone number";
+                  }
+
+                  // Check if it starts with correct prefix
+                  if (!digitsOnly.startsWith('92') && !digitsOnly.startsWith('03') && !digitsOnly.startsWith('3')) {
+                    return "Phone number must start with +92, 03, or 3";
+                  }
+
+                  // Check minimum length for each format
+                  if (digitsOnly.startsWith('92') && digitsOnly.length < 12) {
+                    return "Invalid phone number format. Use: +92-3XX-XXXXXXX";
+                  }
+                  if ((digitsOnly.startsWith('03') || digitsOnly.startsWith('3')) && digitsOnly.length < 10) {
+                    return "Invalid phone number format. Use: 03XX-XXXXXXX";
+                  }
+
                   return null;
                 },
               ),
@@ -211,7 +232,21 @@ class _BloodDonationFormPageState extends State<BloodDonationFormPage> {
               const SizedBox(height: 12),
               _buildDistrictDropdown(isDark),
               const SizedBox(height: 12),
-              _buildLocalLevelDropdown(isDark),
+              _buildTextField(
+                isDark,
+                "Local Level",
+                Icons.apartment,
+                _localLevelController,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return "Please enter local level";
+                  }
+                  if (value.length < 2) {
+                    return "Local level must be at least 2 characters";
+                  }
+                  return null;
+                },
+              ),
               const SizedBox(height: 24),
 
               // Blood Requirement Section
@@ -492,9 +527,9 @@ class _BloodDonationFormPageState extends State<BloodDonationFormPage> {
         onTap: () async {
           final DateTime? picked = await showDatePicker(
             context: context,
-            initialDate: DateTime.now(),
-            firstDate: DateTime(2000),
-            lastDate: DateTime.now(),
+            initialDate: DateTime.now().add(const Duration(days: 1)),
+            firstDate: DateTime.now(), // Today onwards only
+            lastDate: DateTime(2100), // Up to year 2100
           );
           if (picked != null) {
             onDateSelected(picked);
@@ -536,11 +571,51 @@ class _BloodDonationFormPageState extends State<BloodDonationFormPage> {
           size: 24,
         ),
         onTap: () async {
+          // Check if selected date is today
+          final now = DateTime.now();
+          final isToday = _lastDonationDate != null &&
+              _lastDonationDate!.year == now.year &&
+              _lastDonationDate!.month == now.month &&
+              _lastDonationDate!.day == now.day;
+
           final TimeOfDay? picked = await showTimePicker(
             context: context,
             initialTime: TimeOfDay.now(),
+            builder: (context, child) {
+              return MediaQuery(
+                data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
+                child: child!,
+              );
+            },
           );
+
           if (picked != null) {
+            // If today's date is selected, validate that time is not in the past
+            if (isToday) {
+              final now = DateTime.now();
+              final nowTime = TimeOfDay.now();
+
+              // Create proper DateTime objects for comparison
+              final currentDateTime = DateTime(now.year, now.month, now.day, nowTime.hour, nowTime.minute);
+              final selectedDateTime = DateTime(now.year, now.month, now.day, picked.hour, picked.minute);
+
+              // Calculate the difference in minutes
+              final difference = selectedDateTime.difference(currentDateTime).inMinutes;
+
+              // If selected time is more than 5 minutes in the past, block it
+              // Allow small buffer for time it takes to select
+              if (difference < -5) {
+                // Show error - past time not allowed
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Cannot select past time for today\'s date'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+            }
             onTimeSelected(picked);
           }
         },
@@ -565,6 +640,8 @@ class _BloodDonationFormPageState extends State<BloodDonationFormPage> {
       final formattedTime = '${_selectedTime!.hour}:${_selectedTime!.minute.toString().padLeft(2, '0')}';
 
       // Submit to Backend
+      // Note: Using local level ID = 1 as default since local level is now a text field
+      // The backend requires an integer ID for local level
       final result = await BloodRequestService.createBloodRequest(
         patientName: _nameController.text.trim(),
         emergencyContact: _contactPersonController.text.trim(),
@@ -572,7 +649,7 @@ class _BloodDonationFormPageState extends State<BloodDonationFormPage> {
         gender: _selectedGenderId!,
         province: _selectedProvinceId!,
         district: _selectedDistrictId!,
-        localLevel: _selectedLocalLevelId!,
+        localLevel: 1, // Default ID - local level is now a text field for user reference
         unitsRequired: int.parse(_weightController.text.trim()),
         requiredDate: formattedDate,
         requiredTime: formattedTime,
@@ -908,56 +985,9 @@ class _BloodDonationFormPageState extends State<BloodDonationFormPage> {
             child: Text(d.name),
           );
         }).toList(),
-        onChanged: (value) {
-          if (value != null) {
-            setState(() {
-              _selectedDistrictId = value;
-              _selectedLocalLevelId = null;
-              _localLevels = [];
-            });
-            _loadLocalLevels(value);
-          }
-        },
+        onChanged: (value) => setState(() => _selectedDistrictId = value),
         validator: (value) =>
             value == null ? "Please select your district" : null,
-      ),
-    );
-  }
-
-  Widget _buildLocalLevelDropdown(bool isDark) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? Colors.grey.shade800 : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
-        ),
-      ),
-      child: DropdownButtonFormField<int>(
-        initialValue: _selectedLocalLevelId,
-        decoration: InputDecoration(
-          labelText: "Select Local Level",
-          labelStyle: TextStyle(
-            color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
-          ),
-          prefixIcon: Icon(Icons.apartment, color: Colors.red.shade900),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.all(16),
-        ),
-        dropdownColor: isDark ? Colors.grey.shade800 : Colors.white,
-        style: TextStyle(
-          color: isDark ? Colors.white : Colors.black87,
-          fontSize: 16,
-        ),
-        items: _localLevels.map((ll) {
-          return DropdownMenuItem<int>(
-            value: ll.id,
-            child: Text(ll.name),
-          );
-        }).toList(),
-        onChanged: (value) => setState(() => _selectedLocalLevelId = value),
-        validator: (value) =>
-            value == null ? "Please select your local level" : null,
       ),
     );
   }
