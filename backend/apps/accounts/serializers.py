@@ -5,12 +5,59 @@ from datetime import datetime, date
 from typing import Dict, Any
 from rest_framework import serializers
 from django.core.validators import ValidationError
-from .models import MyUser, Donor
+from .models import MyUser, Donor, Province, District, LocalLevel, Gender, BloodGroup
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.hashers import make_password
 
 logger = logging.getLogger(__name__)
+
+
+# LOCATION SERIALIZERS
+class BloodGroupSerializer(serializers.ModelSerializer):
+    """Serializer for BloodGroup model"""
+
+    class Meta:
+        model = BloodGroup
+        fields = ["id", "name"]
+
+
+class GenderSerializer(serializers.ModelSerializer):
+    """Serializer for Gender model"""
+
+    class Meta:
+        model = Gender
+        fields = ["id", "name"]
+
+
+class ProvinceSerializer(serializers.ModelSerializer):
+    """Serializer for Province model"""
+
+    class Meta:
+        model = Province
+        fields = ["id", "name", "code"]
+
+
+class DistrictSerializer(serializers.ModelSerializer):
+    """Serializer for District model with province information"""
+
+    province_name = serializers.CharField(source="province.name", read_only=True)
+
+    class Meta:
+        model = District
+        fields = ["id", "name", "province", "province_name"]
+
+
+class LocalLevelSerializer(serializers.ModelSerializer):
+    """Serializer for LocalLevel model with district information"""
+
+    district_name = serializers.CharField(source="district.name", read_only=True)
+    province_name = serializers.CharField(source="district.province.name", read_only=True)
+
+    class Meta:
+        model = LocalLevel
+        fields = ["id", "name", "district", "district_name", "province_name"]
+
 
 
 def validate_password_strength(password: str) -> str:

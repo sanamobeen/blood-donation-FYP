@@ -100,6 +100,100 @@ DONATION_STATUS = [
 ]
 
 
+# Location Models
+class BloodGroup(models.Model):
+    """
+    BloodGroup model for standardizing blood group options across the system.
+    """
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=3, unique=True)
+
+    class Meta:
+        verbose_name = "Blood Group"
+        verbose_name_plural = "Blood Groups"
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
+class Gender(models.Model):
+    """
+    Gender model for standardizing gender options across the system.
+    """
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=10, unique=True)
+
+    class Meta:
+        verbose_name = "Gender"
+        verbose_name_plural = "Genders"
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
+class Province(models.Model):
+    """
+    Province model for hierarchical location data.
+    """
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=100, unique=True)
+    code = models.CharField(max_length=10, unique=True)
+
+    class Meta:
+        verbose_name = "Province"
+        verbose_name_plural = "Provinces"
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
+class District(models.Model):
+    """
+    District model belonging to a province.
+    """
+    id = models.AutoField(primary_key=True)
+    province = models.ForeignKey(
+        Province,
+        on_delete=models.CASCADE,
+        related_name="districts"
+    )
+    name = models.CharField(max_length=100)
+
+    class Meta:
+        verbose_name = "District"
+        verbose_name_plural = "Districts"
+        ordering = ["name"]
+        unique_together = ["province", "name"]
+
+    def __str__(self):
+        return f"{self.name}, {self.province.name}"
+
+
+class LocalLevel(models.Model):
+    """
+    Local level (town/city/area) model belonging to a district.
+    """
+    id = models.AutoField(primary_key=True)
+    district = models.ForeignKey(
+        District,
+        on_delete=models.CASCADE,
+        related_name="local_levels"
+    )
+    name = models.CharField(max_length=200)
+
+    class Meta:
+        verbose_name = "Local Level"
+        verbose_name_plural = "Local Levels"
+        ordering = ["name"]
+        unique_together = ["district", "name"]
+
+    def __str__(self):
+        return f"{self.name}, {self.district.name}"
+
+
 # Manager
 class MyUserManager(BaseUserManager):
 
@@ -123,8 +217,8 @@ class MyUserManager(BaseUserManager):
         extra_fields.setdefault("is_active", True)
         extra_fields.setdefault("full_name", "Superuser")
         extra_fields.setdefault("phone", "")
-        extra_fields.setdefault("province", "Punjab")
         extra_fields.setdefault("gender", "Other")
+        # province will be set to None by default
         return self.create_user(email, password, **extra_fields)
 
 
@@ -158,34 +252,38 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
         verbose_name="Phone Number",
         help_text="Contact phone number"
     )
-    province = models.CharField(
-        max_length=100,
-        choices=PROVINCES,
-        default="Punjab",
+    province = models.ForeignKey(
+        Province,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         verbose_name="Province",
         help_text="User's province"
     )
-    district = models.CharField(
-        max_length=100,
-        choices=DISTRICTS,
+    district = models.ForeignKey(
+        District,
+        on_delete=models.SET_NULL,
+        null=True,
         blank=True,
-        default="",
         verbose_name="District",
         help_text="User's district within province",
     )
-    local_level = models.CharField(
-        max_length=200,
+    local_level = models.ForeignKey(
+        LocalLevel,
+        on_delete=models.SET_NULL,
+        null=True,
         blank=True,
-        default="",
         verbose_name="Local Level",
         help_text="Specific area or locality",
     )
-    gender = models.CharField(
-        max_length=6,
-        choices=GENDERS,
-        default="Other",
+    gender = models.ForeignKey(
+        Gender,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         verbose_name="Gender",
         help_text="User's gender",
+        related_name="users",
     )
     date_of_birth = models.DateField(
         blank=True,
@@ -232,18 +330,6 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
     def get_full_name(self) -> str:
         """Return the user's full name."""
         return self.full_name.strip()
-
-    def get_province_display(self) -> str:
-        """Get the human-readable province name."""
-        return dict(self._meta.get_field("province").choices).get(
-            self.province, self.province
-        )
-
-    def get_district_display(self) -> str:
-        """Get the human-readable district name."""
-        return dict(self._meta.get_field("district").choices).get(
-            self.district, self.district
-        )
 
     def get_gender_display(self) -> str:
         """Get the human-readable gender name."""
