@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'landing_page.dart';
+import 'models/blood_request_model.dart';
+import 'services/blood_request_service.dart';
 
 class BloodDonationFormPage extends StatefulWidget {
   const BloodDonationFormPage({super.key});
@@ -17,6 +19,7 @@ class _BloodDonationFormPageState extends State<BloodDonationFormPage> {
   final _nameController = TextEditingController();
   final _contactPersonController = TextEditingController();
   final _caseController = TextEditingController();
+  final _localLevelController = TextEditingController();
   final _addressController = TextEditingController();
   final _cityController = TextEditingController();
   final _stateController = TextEditingController();
@@ -24,38 +27,99 @@ class _BloodDonationFormPageState extends State<BloodDonationFormPage> {
   final _weightController = TextEditingController();
   final _heightController = TextEditingController();
 
-  // Selection State Variables
-  String? _selectedGender;
-  String? _selectedBloodType;
+  // Selection State Variables (IDs for API)
+  int? _selectedGenderId;
+  int? _selectedBloodGroupId;
   DateTime? _lastDonationDate;
   TimeOfDay? _selectedTime;
-  String? _selectedProvince;
-  String? _selectedDistrict;
-  String? _selectedLocalLevel;
+  int? _selectedProvinceId;
+  int? _selectedDistrictId;
+  int? _selectedLocalLevelId;
 
-  // Data Lists
-  final List<String> _genders = ['Male', 'Female', 'Other'];
-  final List<String> _bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+  // API Data Lists
+  List<Province> _provinces = [];
+  List<District> _districts = [];
+  List<LocalLevel> _localLevels = [];
+  List<BloodGroup> _bloodGroups = [];
+  List<Gender> _genders = [];
 
-  // Location Lists
-  final List<String> _provinces = [
-    'Province 1', 'Province 2', 'Province 3', 'Province 4', 'Province 5',
-    'Province 6', 'Province 7', 'Province 8', 'Province 9', 'Province 10',
-  ];
-  final List<String> _districts = [
-    'District 1', 'District 2', 'District 3', 'District 4', 'District 5',
-    'District 6', 'District 7', 'District 8', 'District 9', 'District 10',
-  ];
-  final List<String> _localLevels = [
-    'Local Level 1', 'Local Level 2', 'Local Level 3', 'Local Level 4', 'Local Level 5',
-    'Local Level 6', 'Local Level 7', 'Local Level 8', 'Local Level 9', 'Local Level 10',
-  ];
+  // Loading State
+  // ignore: prefer_final_fields
+  bool _isLoading = false;
+  bool _isInitialLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInitialData();
+  }
+  
+
+  Future<void> _loadInitialData() async {
+    setState(() {
+      _isInitialLoading = true;
+    });
+
+    try {
+      // Load provinces
+      final provincesResult = await BloodRequestService.getProvinces();
+      if (provincesResult.success && provincesResult.provinces != null) {
+        setState(() {
+          _provinces = provincesResult.provinces!;
+        });
+      }
+
+      // Load blood groups
+      final bloodGroupsResult = await BloodRequestService.getBloodGroups();
+      if (bloodGroupsResult.success && bloodGroupsResult.bloodGroups != null) {
+        setState(() {
+          _bloodGroups = bloodGroupsResult.bloodGroups!;
+        });
+      }
+
+      // Load genders
+      final gendersResult = await BloodRequestService.getGenders();
+      if (gendersResult.success && gendersResult.genders != null) {
+        setState(() {
+          _genders = gendersResult.genders!;
+        });
+      }
+    } catch (e) {
+      // ignore: avoid_print
+      print('Error loading initial data: $e');
+    } finally {
+      setState(() {
+        _isInitialLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadDistricts(int provinceId) async {
+    final result = await BloodRequestService.getDistricts(provinceId);
+    if (result.success && result.districts != null) {
+      setState(() {
+        _districts = result.districts!;
+        _selectedLocalLevelId = null;
+        _localLevels = [];
+      });
+    }
+  }
+
+  Future<void> _loadLocalLevels(int districtId) async {
+    final result = await BloodRequestService.getLocalLevels(districtId);
+    if (result.success && result.localLevels != null) {
+      setState(() {
+        _localLevels = result.localLevels!;
+      });
+    }
+  }
 
   @override
   void dispose() {
     _nameController.dispose();
     _contactPersonController.dispose();
     _caseController.dispose();
+    _localLevelController.dispose();
     _addressController.dispose();
     _cityController.dispose();
     _stateController.dispose();
@@ -87,13 +151,19 @@ class _BloodDonationFormPageState extends State<BloodDonationFormPage> {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+      body: Stack(
+        children: [
+          _isInitialLoading
+              ? const Center(
+                  child: CircularProgressIndicator(),
+                )
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
               _buildHeader(isDark),
               const SizedBox(height: 24),
 
@@ -129,64 +199,19 @@ class _BloodDonationFormPageState extends State<BloodDonationFormPage> {
                 },
               ),
               const SizedBox(height: 12),
-              _buildDropdownField(
-                isDark,
-                "Blood Group",
-                Icons.bloodtype,
-                _selectedBloodType,
-                _bloodTypes,
-                (value) => setState(() => _selectedBloodType = value),
-                validator: (value) =>
-                    value == null ? "Please select your blood group" : null,
-              ),
+              _buildBloodGroupDropdown(isDark),
               const SizedBox(height: 12),
-              _buildDropdownField(
-                isDark,
-                "Gender",
-                Icons.wc,
-                _selectedGender,
-                _genders,
-                (value) => setState(() => _selectedGender = value),
-                validator: (value) =>
-                    value == null ? "Please select your gender" : null,
-              ),
+              _buildGenderDropdown(isDark),
               const SizedBox(height: 24),
 
               // Location Details Section
               _buildSectionHeader(isDark, "Location Details", Icons.location_on),
               const SizedBox(height: 16),
-              _buildDropdownField(
-                isDark,
-                "Select Provinces",
-                Icons.location_city,
-                _selectedProvince,
-                _provinces,
-                (value) => setState(() => _selectedProvince = value),
-                validator: (value) =>
-                    value == null ? "Please select your province" : null,
-              ),
+              _buildProvinceDropdown(isDark),
               const SizedBox(height: 12),
-              _buildDropdownField(
-                isDark,
-                "Select District",
-                Icons.place,
-                _selectedDistrict,
-                _districts,
-                (value) => setState(() => _selectedDistrict = value),
-                validator: (value) =>
-                    value == null ? "Please select your district" : null,
-              ),
+              _buildDistrictDropdown(isDark),
               const SizedBox(height: 12),
-              _buildDropdownField(
-                isDark,
-                "Select Local Level",
-                Icons.apartment,
-                _selectedLocalLevel,
-                _localLevels,
-                (value) => setState(() => _selectedLocalLevel = value),
-                validator: (value) =>
-                    value == null ? "Please select your local level" : null,
-              ),
+              _buildLocalLevelDropdown(isDark),
               const SizedBox(height: 24),
 
               // Blood Requirement Section
@@ -301,7 +326,31 @@ class _BloodDonationFormPageState extends State<BloodDonationFormPage> {
             ],
           ),
         ),
-      ),
+        ),
+        if (_isLoading)
+          Container(
+            color: Colors.black.withValues(alpha: 0.5),
+            child: const Center(
+              child: Card(
+                child: Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 16),
+                      Text(
+                        "Submitting blood request...",
+                        style: TextStyle(fontSize: 16),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    ),
     );
   }
 
@@ -409,51 +458,6 @@ class _BloodDonationFormPageState extends State<BloodDonationFormPage> {
     );
   }
 
-  Widget _buildDropdownField(
-    bool isDark,
-    String label,
-    IconData icon,
-    String? value,
-    List<String> items,
-    Function(String?) onChanged, {
-    String? Function(String?)? validator,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? Colors.grey.shade800 : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
-        ),
-      ),
-      child: DropdownButtonFormField<String>(
-        initialValue: value,
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: TextStyle(
-            color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
-          ),
-          prefixIcon: Icon(icon, color: Colors.red.shade900),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.all(16),
-        ),
-        dropdownColor: isDark ? Colors.grey.shade800 : Colors.white,
-        style: TextStyle(
-          color: isDark ? Colors.white : Colors.black87,
-          fontSize: 16,
-        ),
-        items: items.map((String item) {
-          return DropdownMenuItem<String>(
-            value: item,
-            child: Text(item),
-          );
-        }).toList(),
-        onChanged: onChanged,
-        validator: validator,
-      ),
-    );
-  }
-
   Widget _buildDatePicker(
     bool isDark,
     String label,
@@ -544,21 +548,55 @@ class _BloodDonationFormPageState extends State<BloodDonationFormPage> {
     );
   }
 
-  void _submitForm() {
+  void _submitForm() async {
     // Step 1: Form Validation
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    // Step 2: Submit to Backend
- 
-    _showSuccessDialog();
+    // Step 2: Show loading
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Format date and time
+      final formattedDate = '${_lastDonationDate!.year}-${_lastDonationDate!.month.toString().padLeft(2, '0')}-${_lastDonationDate!.day.toString().padLeft(2, '0')}';
+      final formattedTime = '${_selectedTime!.hour}:${_selectedTime!.minute.toString().padLeft(2, '0')}';
+
+      // Submit to Backend
+      final result = await BloodRequestService.createBloodRequest(
+        patientName: _nameController.text.trim(),
+        emergencyContact: _contactPersonController.text.trim(),
+        bloodGroup: _selectedBloodGroupId!,
+        gender: _selectedGenderId!,
+        province: _selectedProvinceId!,
+        district: _selectedDistrictId!,
+        localLevel: _selectedLocalLevelId!,
+        unitsRequired: int.parse(_weightController.text.trim()),
+        requiredDate: formattedDate,
+        requiredTime: formattedTime,
+        caseDescription: _caseController.text.trim().isEmpty ? null : _caseController.text.trim(),
+      );
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (result.success) {
+        _showSuccessDialog(result.bloodRequest?.id);
+      } else {
+        _showErrorDialog(result.errorMessage);
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      _showErrorDialog('Failed to create blood request: ${e.toString()}');
+    }
   }
 
-  void _showSuccessDialog() {
-    // Generate Donor ID from timestamp
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final donorId = 'BD${timestamp.toString().substring(7)}';
+  void _showSuccessDialog(int? requestId) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -582,7 +620,7 @@ class _BloodDonationFormPageState extends State<BloodDonationFormPage> {
 
             // Title
             const Text(
-              "Registration Successful!",
+              "Blood Request Created!",
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -592,7 +630,7 @@ class _BloodDonationFormPageState extends State<BloodDonationFormPage> {
 
             // Message
             const Text(
-              "Thank you for registering as a blood donor. Your information has been saved.",
+              "Your blood request has been successfully created.",
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
@@ -601,9 +639,9 @@ class _BloodDonationFormPageState extends State<BloodDonationFormPage> {
             ),
             const SizedBox(height: 8),
 
-            // Donor ID
+            // Request ID
             Text(
-              "Appointment ID: $donorId",
+              "Request ID: #$requestId",
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -641,6 +679,285 @@ class _BloodDonationFormPageState extends State<BloodDonationFormPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showErrorDialog(String? errorMessage) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Error Icon
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.red.shade100,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.error, color: Colors.red, size: 48),
+            ),
+            const SizedBox(height: 16),
+
+            // Title
+            const Text(
+              "Submission Failed",
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            // Message
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                errorMessage ?? 'Failed to create blood request',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey,
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Close Button
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.shade900,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              ),
+              child: const Text(
+                "Close",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBloodGroupDropdown(bool isDark) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? Colors.grey.shade800 : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
+        ),
+      ),
+      child: DropdownButtonFormField<int>(
+        initialValue: _selectedBloodGroupId,
+        decoration: InputDecoration(
+          labelText: "Blood Group",
+          labelStyle: TextStyle(
+            color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+          ),
+          prefixIcon: Icon(Icons.bloodtype, color: Colors.red.shade900),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.all(16),
+        ),
+        dropdownColor: isDark ? Colors.grey.shade800 : Colors.white,
+        style: TextStyle(
+          color: isDark ? Colors.white : Colors.black87,
+          fontSize: 16,
+        ),
+        items: _bloodGroups.map((bg) {
+          return DropdownMenuItem<int>(
+            value: bg.id,
+            child: Text(bg.name),
+          );
+        }).toList(),
+        onChanged: (value) => setState(() => _selectedBloodGroupId = value),
+        validator: (value) =>
+            value == null ? "Please select your blood group" : null,
+      ),
+    );
+  }
+
+  Widget _buildGenderDropdown(bool isDark) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? Colors.grey.shade800 : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
+        ),
+      ),
+      child: DropdownButtonFormField<int>(
+        initialValue: _selectedGenderId,
+        decoration: InputDecoration(
+          labelText: "Gender",
+          labelStyle: TextStyle(
+            color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+          ),
+          prefixIcon: Icon(Icons.wc, color: Colors.red.shade900),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.all(16),
+        ),
+        dropdownColor: isDark ? Colors.grey.shade800 : Colors.white,
+        style: TextStyle(
+          color: isDark ? Colors.white : Colors.black87,
+          fontSize: 16,
+        ),
+        items: _genders.map((g) {
+          return DropdownMenuItem<int>(
+            value: g.id,
+            child: Text(g.name),
+          );
+        }).toList(),
+        onChanged: (value) => setState(() => _selectedGenderId = value),
+        validator: (value) =>
+            value == null ? "Please select your gender" : null,
+      ),
+    );
+  }
+
+  Widget _buildProvinceDropdown(bool isDark) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? Colors.grey.shade800 : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
+        ),
+      ),
+      child: DropdownButtonFormField<int>(
+        initialValue: _selectedProvinceId,
+        decoration: InputDecoration(
+          labelText: "Select Province",
+          labelStyle: TextStyle(
+            color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+          ),
+          prefixIcon: Icon(Icons.location_city, color: Colors.red.shade900),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.all(16),
+        ),
+        dropdownColor: isDark ? Colors.grey.shade800 : Colors.white,
+        style: TextStyle(
+          color: isDark ? Colors.white : Colors.black87,
+          fontSize: 16,
+        ),
+        items: _provinces.map((p) {
+          return DropdownMenuItem<int>(
+            value: p.id,
+            child: Text(p.name),
+          );
+        }).toList(),
+        onChanged: (value) {
+          if (value != null) {
+            setState(() {
+              _selectedProvinceId = value;
+              _selectedDistrictId = null;
+              _districts = [];
+            });
+            _loadDistricts(value);
+          }
+        },
+        validator: (value) =>
+            value == null ? "Please select your province" : null,
+      ),
+    );
+  }
+
+  Widget _buildDistrictDropdown(bool isDark) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? Colors.grey.shade800 : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
+        ),
+      ),
+      child: DropdownButtonFormField<int>(
+        initialValue: _selectedDistrictId,
+        decoration: InputDecoration(
+          labelText: "Select District",
+          labelStyle: TextStyle(
+            color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+          ),
+          prefixIcon: Icon(Icons.place, color: Colors.red.shade900),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.all(16),
+        ),
+        dropdownColor: isDark ? Colors.grey.shade800 : Colors.white,
+        style: TextStyle(
+          color: isDark ? Colors.white : Colors.black87,
+          fontSize: 16,
+        ),
+        items: _districts.map((d) {
+          return DropdownMenuItem<int>(
+            value: d.id,
+            child: Text(d.name),
+          );
+        }).toList(),
+        onChanged: (value) {
+          if (value != null) {
+            setState(() {
+              _selectedDistrictId = value;
+              _selectedLocalLevelId = null;
+              _localLevels = [];
+            });
+            _loadLocalLevels(value);
+          }
+        },
+        validator: (value) =>
+            value == null ? "Please select your district" : null,
+      ),
+    );
+  }
+
+  Widget _buildLocalLevelDropdown(bool isDark) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? Colors.grey.shade800 : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
+        ),
+      ),
+      child: DropdownButtonFormField<int>(
+        initialValue: _selectedLocalLevelId,
+        decoration: InputDecoration(
+          labelText: "Select Local Level",
+          labelStyle: TextStyle(
+            color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+          ),
+          prefixIcon: Icon(Icons.apartment, color: Colors.red.shade900),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.all(16),
+        ),
+        dropdownColor: isDark ? Colors.grey.shade800 : Colors.white,
+        style: TextStyle(
+          color: isDark ? Colors.white : Colors.black87,
+          fontSize: 16,
+        ),
+        items: _localLevels.map((ll) {
+          return DropdownMenuItem<int>(
+            value: ll.id,
+            child: Text(ll.name),
+          );
+        }).toList(),
+        onChanged: (value) => setState(() => _selectedLocalLevelId = value),
+        validator: (value) =>
+            value == null ? "Please select your local level" : null,
       ),
     );
   }
