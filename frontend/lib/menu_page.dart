@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'profile_page.dart';
 import 'find_donor.dart';
 import 'blood_donation_form_page.dart';
 import 'feedback_page.dart';
-import 'register_page.dart';
-import 'login_page.dart';
 import 'services/language_service.dart';
 
 class MenuPage extends StatefulWidget {
@@ -49,18 +46,6 @@ class _MenuPageState extends State<MenuPage> {
           _translate('menu'),
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.person, color: Colors.white),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => ProfilePage()),
-              );
-            },
-            tooltip: 'Profile',
-          ),
-        ],
       ),
       body: Directionality(
         textDirection: isUrdu ? TextDirection.rtl : TextDirection.ltr,
@@ -70,36 +55,6 @@ class _MenuPageState extends State<MenuPage> {
             // Manage Your Experience Card
             _buildExperienceCard(context),
             const SizedBox(height: 16),
-
-            // Register
-            _buildMenuItem(
-              context,
-              icon: Icons.person_add,
-              title: _selectedLanguage == 'ur' ? 'رجسٹر کریں' : 'Register',
-              color: Colors.red.shade700,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const RegisterPage()),
-                );
-              },
-            ),
-            const SizedBox(height: 8),
-
-            // Login
-            _buildMenuItem(
-              context,
-              icon: Icons.login,
-              title: _selectedLanguage == 'ur' ? 'لاگ ان کریں' : 'Login',
-              color: Colors.red.shade700,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const LoginPage()),
-                );
-              },
-            ),
-            const SizedBox(height: 8),
 
             // Find Volunteers
             _buildMenuItem(

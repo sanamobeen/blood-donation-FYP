@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'services/language_service.dart';
 import 'utils/mock_data.dart';
 import 'config/api_config.dart';
+import 'landing_page.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -194,8 +195,11 @@ class _RegisterPageState extends State<RegisterPage> {
             ),
           );
 
-          // Navigate to main app instead of back to login
-          Navigator.of(context).pushReplacementNamed('/menu');
+          // Navigate to landing page and clear all navigation stack
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const LandingPage()),
+            (route) => false,
+          );
         }
       } else {
         final errorData = jsonDecode(response.body);
