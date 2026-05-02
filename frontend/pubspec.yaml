@@ -49,6 +49,16 @@ dependencies:
   latlong2: ^0.9.0
   flutter_map: ^6.1.0
 
+  # SOS Emergency Features
+  url_launcher: ^6.2.1
+  flutter_contacts: ^1.0.12
+  flutter_local_notifications: ^17.2.3
+  audioplayers: ^5.2.1
+  sqflite: ^2.3.0
+  path_provider: ^2.1.1
+  vibration: ^2.0.0
+  flutter_background_service: ^5.0.5
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

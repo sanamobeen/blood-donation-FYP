@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'find_donor.dart';
 import 'blood_donation_form_page.dart';
 import 'feedback_page.dart';
+import 'emergency_page.dart';
 import 'services/language_service.dart';
 
 class MenuPage extends StatefulWidget {
@@ -69,6 +70,10 @@ class _MenuPageState extends State<MenuPage> {
                 );
               },
             ),
+            const SizedBox(height: 8),
+
+            // SOS Emergency Button
+            _buildSOSMenuItem(context),
             const SizedBox(height: 8),
 
             // Language Settings
@@ -639,6 +644,83 @@ class _MenuPageState extends State<MenuPage> {
             child: Text(isUrdu ? 'بند کریں' : 'Close'),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSOSMenuItem(BuildContext context) {
+    final isUrdu = _selectedLanguage == 'ur';
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const EmergencyPage()),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.red.shade700, Colors.red.shade900],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.red.shade700.withValues(alpha: 0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(28),
+              ),
+              child: Icon(
+                Icons.sos,
+                color: Colors.red.shade700,
+                size: 32,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isUrdu ? 'ایمرجنسی ایس او ایس' : 'Emergency SOS',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    isUrdu ? 'ایمرجنسی کے لیے تھپتھپائیں' : 'Tap for emergency help',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.white70,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              _selectedLanguage == 'ur' ? Icons.arrow_back_ios : Icons.arrow_forward_ios,
+              size: 16,
+              color: Colors.white70,
+            ),
+          ],
+        ),
       ),
     );
   }
