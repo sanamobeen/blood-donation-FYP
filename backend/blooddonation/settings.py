@@ -140,16 +140,17 @@ REST_FRAMEWORK = {
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
-    "DEFAULT_THROTTLE_CLASSES": (
-        "rest_framework.throttling.AnonRateThrottle",
-        "rest_framework.throttling.UserRateThrottle",
-    ),
-    "DEFAULT_THROTTLE_RATES": {
-        "anon": "1000/hour",  # Increased from 20 for testing
-        "user": "10000/hour",  # Increased from 1000 for testing
-        "login": "100/hour",  # Increased from 5 for testing
-        "register": "100/hour",  # Increased from 3 for testing
-    },
+    # Throttling disabled for development - re-enable in production
+    # "DEFAULT_THROTTLE_CLASSES": (
+    #     "rest_framework.throttling.AnonRateThrottle",
+    #     "rest_framework.throttling.UserRateThrottle",
+    # ),
+    # "DEFAULT_THROTTLE_RATES": {
+    #     "anon": "1000/hour",  # Increased from 20 for testing
+    #     "user": "10000/hour",  # Increased from 1000 for testing
+    #     "login": "100/hour",  # Increased from 5 for testing
+    #     "register": "100/hour",  # Increased from 3 for testing
+    # },
     "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",),
     "DEFAULT_PARSER_CLASSES": ("rest_framework.parsers.JSONParser",),
 }

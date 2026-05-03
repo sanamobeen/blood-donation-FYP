@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'find_donor.dart';
 import 'blood_donation_form_page.dart';
 import 'feedback_page.dart';
-import 'emergency_page.dart';
+import 'emergency_contacts_page.dart';
 import 'services/language_service.dart';
 
 class MenuPage extends StatefulWidget {
@@ -125,6 +125,21 @@ class _MenuPageState extends State<MenuPage> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const FeedbackPage()),
+                );
+              },
+            ),
+            const SizedBox(height: 8),
+
+            // Emergency Contacts
+            _buildMenuItem(
+              context,
+              icon: Icons.contact_phone,
+              title: 'Emergency Contacts',
+              color: Colors.red.shade700,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const EmergencyContactsPage()),
                 );
               },
             ),

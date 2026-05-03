@@ -122,8 +122,12 @@ class UserSerializer(serializers.ModelSerializer):
 
 # REGISTER SERIALIZER
 class RegisterSerializer(serializers.ModelSerializer):
-    # Frontend sends these fields directly
+    # Frontend sends these fields directly as strings
     blood_group = serializers.CharField(write_only=True, required=False)
+    gender = serializers.CharField(write_only=True, required=False)
+    province = serializers.CharField(write_only=True, required=False)
+    district = serializers.CharField(write_only=True, required=False)
+    local_level = serializers.CharField(write_only=True, required=False)
     password = serializers.CharField(
         write_only=True,
         required=True,
@@ -147,6 +151,57 @@ class RegisterSerializer(serializers.ModelSerializer):
             "confirm_password",
         ]
 
+    def to_internal_value(self, data):
+        """
+        Convert string values to model instances for foreign key fields.
+        This allows the frontend to send string names instead of integer IDs.
+        """
+        # Make a mutable copy of data
+        data = data.copy()
+
+        # Convert gender string to Gender instance
+        if 'gender' in data and data['gender']:
+            try:
+                gender_obj = Gender.objects.get(name=str(data['gender']))
+                data['gender'] = gender_obj.id
+            except Gender.DoesNotExist:
+                raise serializers.ValidationError({
+                    "gender": f"Gender '{data['gender']}' not found. Valid options: Male, Female, Other"
+                })
+
+        # Convert province string to Province instance
+        if 'province' in data and data['province']:
+            try:
+                province_obj = Province.objects.get(name=str(data['province']))
+                data['province'] = province_obj.id
+            except Province.DoesNotExist:
+                raise serializers.ValidationError({
+                    "province": f"Province '{data['province']}' not found. Valid options: Punjab, Sindh, Khyber Pakhtunkhwa, Balochistan"
+                })
+
+        # Convert district string to District instance
+        if 'district' in data and data['district']:
+            try:
+                district_obj = District.objects.get(name=str(data['district']))
+                data['district'] = district_obj.id
+            except District.DoesNotExist:
+                raise serializers.ValidationError({
+                    "district": f"District '{data['district']}' not found"
+                })
+
+        # Convert local_level string to LocalLevel instance
+        if 'local_level' in data and data['local_level']:
+            try:
+                local_level_obj = LocalLevel.objects.get(name=str(data['local_level']))
+                data['local_level'] = local_level_obj.id
+            except LocalLevel.DoesNotExist:
+                raise serializers.ValidationError({
+                    "local_level": f"Local level '{data['local_level']}' not found"
+                })
+
+        # Call parent method to continue normal processing
+        return super().to_internal_value(data)
+
     def validate(self, attrs: Dict[str, Any]) -> Dict[str, Any]:
         """
         Comprehensive validation for user registration.
@@ -163,42 +218,6 @@ class RegisterSerializer(serializers.ModelSerializer):
                     "confirm_password": "Passwords must be identical",
                 }
             )
-
-        # Validate province is not empty and is a valid choice
-        if "province" in attrs:
-            if not attrs["province"].strip():
-                raise serializers.ValidationError(
-                    {"province": "Province cannot be empty"}
-                )
-            # Safely get province choices with fallback
-            province_field = MyUser._meta.get_field("province")
-            valid_provinces = [choice[0] for choice in province_field.choices] if province_field.choices else []
-            if attrs["province"] not in valid_provinces:
-                raise serializers.ValidationError(
-                    {"province": "Invalid province selection"}
-                )
-
-        # Validate district if provided
-        if "district" in attrs and attrs["district"].strip():
-            valid_districts = [
-                choice[0] for choice in MyUser._meta.get_field("district").choices
-            ]
-            if attrs["district"] not in valid_districts:
-                raise serializers.ValidationError(
-                    {"district": "Invalid district selection"}
-                )
-
-        # Validate gender is not empty and is valid
-        if "gender" in attrs:
-            if not attrs["gender"].strip():
-                raise serializers.ValidationError({"gender": "Gender cannot be empty"})
-            valid_genders = [
-                choice[0] for choice in MyUser._meta.get_field("gender").choices
-            ]
-            if attrs["gender"] not in valid_genders:
-                raise serializers.ValidationError(
-                    {"gender": "Invalid gender selection"}
-                )
 
         # Validate email format and uniqueness
         if "email" in attrs:
