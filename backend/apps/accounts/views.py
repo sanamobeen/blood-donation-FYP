@@ -71,12 +71,12 @@ class RegisterView(generics.GenericAPIView):
     """
     User registration endpoint.
     Creates new user accounts with optional donor profile.
-    Implements rate limiting and comprehensive validation.
+    Rate limiting disabled for development.
     """
 
     serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
-    throttle_classes = [RegisterRateThrottle]
+    # throttle_classes = [RegisterRateThrottle]  # Disabled for development
 
     def post(self, request) -> Response:
         """
@@ -136,12 +136,12 @@ class LoginView(generics.GenericAPIView):
     """
     User login endpoint.
     Authenticates users and returns JWT tokens.
-    Implements rate limiting and security best practices.
+    Rate limiting disabled for development.
     """
 
     serializer_class = LoginSerializer
     permission_classes = [permissions.AllowAny]
-    throttle_classes = [LoginRateThrottle]
+    # throttle_classes = [LoginRateThrottle]  # Disabled for development
 
     def post(self, request) -> Response:
         """
