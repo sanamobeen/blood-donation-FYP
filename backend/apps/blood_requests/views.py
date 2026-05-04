@@ -40,7 +40,7 @@ class MyBloodRequestsView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return BloodRequest.objects.filter(user=self.request.user)
+        return BloodRequest.objects.filter(user_id=self.request.user.id)
 
 
 class BloodRequestDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -48,4 +48,4 @@ class BloodRequestDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return BloodRequest.objects.filter(user=self.request.user)
+        return BloodRequest.objects.filter(user_id=self.request.user.id)

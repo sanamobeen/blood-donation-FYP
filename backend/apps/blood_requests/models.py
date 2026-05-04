@@ -1,5 +1,21 @@
 from django.db import models
-from apps.accounts.models import MyUser, Province, District, LocalLevel, Gender, BloodGroup
+
+BLOOD_GROUPS = [
+    ("A+", "A+"),
+    ("A-", "A-"),
+    ("B+", "B+"),
+    ("B-", "B-"),
+    ("AB+", "AB+"),
+    ("AB-", "AB-"),
+    ("O+", "O+"),
+    ("O-", "O-"),
+]
+
+GENDERS = [
+    ("Male", "Male"),
+    ("Female", "Female"),
+    ("Other", "Other"),
+]
 
 REQUEST_STATUS = [
     ("pending", "Pending"),
@@ -12,26 +28,14 @@ REQUEST_STATUS = [
 
 class BloodRequest(models.Model):
     id = models.AutoField(primary_key=True)
-    user = models.ForeignKey(
-        MyUser, on_delete=models.CASCADE, related_name="blood_requests"
-    )
+    user_id = models.IntegerField()
     patient_name = models.CharField(max_length=100)
     emergency_contact = models.CharField(max_length=15)
-    blood_group = models.ForeignKey(
-        BloodGroup, on_delete=models.CASCADE, related_name="blood_requests"
-    )
-    gender = models.ForeignKey(
-        Gender, on_delete=models.CASCADE, related_name="blood_requests"
-    )
-    province = models.ForeignKey(
-        Province, on_delete=models.CASCADE, related_name="blood_requests", blank=True, null=True
-    )
-    district = models.ForeignKey(
-        District, on_delete=models.CASCADE, related_name="blood_requests", blank=True, null=True
-    )
-    local_level = models.ForeignKey(
-        LocalLevel, on_delete=models.CASCADE, related_name="blood_requests", blank=True, null=True
-    )
+    blood_group = models.CharField(max_length=3, choices=BLOOD_GROUPS)
+    gender = models.CharField(max_length=10, choices=GENDERS)
+    province = models.CharField(max_length=100, blank=True, null=True)
+    district = models.CharField(max_length=100, blank=True, null=True)
+    local_level = models.CharField(max_length=200, blank=True, null=True)
     units_required = models.IntegerField()
     required_date = models.DateField(blank=True, null=True)
     required_time = models.TimeField(blank=True, null=True)

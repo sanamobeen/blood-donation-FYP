@@ -1,35 +1,22 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import MyUser, Province, District, LocalLevel, Gender, BloodGroup
-
-
-@admin.register(BloodGroup)
-class BloodGroupAdmin(admin.ModelAdmin):
-    list_display = ("name",)
-    search_fields = ("name",)
-    ordering = ("name",)
-
-
-@admin.register(Gender)
-class GenderAdmin(admin.ModelAdmin):
-    list_display = ("name",)
-    search_fields = ("name",)
-    ordering = ("name",)
+from .models import MyUser, Donor, EmailVerification, PasswordReset
 
 
 @admin.register(MyUser)
 class MyUserAdmin(UserAdmin):
     model = MyUser
 
-    list_display = ("email", "full_name", "phone", "is_staff", "is_active")
-    search_fields = ("email", "full_name", "phone")
+    list_display = ("email", "full_name", "phone", "gender", "province", "district", "blood_group", "is_staff", "is_active")
+    search_fields = ("email", "full_name", "phone", "province", "district")
     ordering = ("email",)
+    list_filter = ("gender", "province", "blood_group", "is_staff", "is_active")
 
     fieldsets = (
         (None, {"fields": ("email", "password")}),
         (
             "Personal Info",
-            {"fields": ("full_name", "phone", "province", "district", "local_level", "gender", "date_of_birth")},
+            {"fields": ("full_name", "phone", "gender", "province", "district", "local_level", "date_of_birth", "blood_group")},
         ),
         (
             "Status",
@@ -43,7 +30,7 @@ class MyUserAdmin(UserAdmin):
                 )
             },
         ),
-        ("Important Dates", {"fields": ("last_login",)}),
+        ("Important Dates", {"fields": ("last_login", "date_joined")}),
     )
 
     add_fieldsets = (
@@ -55,10 +42,12 @@ class MyUserAdmin(UserAdmin):
                     "email",
                     "full_name",
                     "phone",
+                    "gender",
                     "province",
                     "district",
                     "local_level",
-                    "gender",
+                    "date_of_birth",
+                    "blood_group",
                     "password1",
                     "password2",
                     "is_staff",
@@ -69,25 +58,27 @@ class MyUserAdmin(UserAdmin):
     )
 
 
-@admin.register(Province)
-class ProvinceAdmin(admin.ModelAdmin):
-    list_display = ("name", "code")
-    search_fields = ("name", "code")
-    ordering = ("name",)
+@admin.register(Donor)
+class DonorAdmin(admin.ModelAdmin):
+    list_display = ("user_id", "is_available", "last_donation_date", "total_donations", "created_at")
+    search_fields = ("user_id",)
+    list_filter = ("is_available", "created_at")
+    ordering = ("-created_at",)
 
 
-@admin.register(District)
-class DistrictAdmin(admin.ModelAdmin):
-    list_display = ("name", "province")
-    list_filter = ("province",)
-    search_fields = ("name", "province__name")
-    ordering = ("province", "name")
+@admin.register(EmailVerification)
+class EmailVerificationAdmin(admin.ModelAdmin):
+    list_display = ("user_id", "token", "is_used", "created_at")
+    search_fields = ("user_id", "token")
+    list_filter = ("is_used", "created_at")
+    ordering = ("-created_at",)
+    readonly_fields = ("token", "created_at")
 
 
-@admin.register(LocalLevel)
-class LocalLevelAdmin(admin.ModelAdmin):
-    list_display = ("name", "district")
-    list_filter = ("district",)
-    search_fields = ("name", "district__name")
-    ordering = ("district", "name")
-
+@admin.register(PasswordReset)
+class PasswordResetAdmin(admin.ModelAdmin):
+    list_display = ("user_id", "token", "is_used", "created_at")
+    search_fields = ("user_id", "token")
+    list_filter = ("is_used", "created_at")
+    ordering = ("-created_at",)
+    readonly_fields = ("token", "created_at")

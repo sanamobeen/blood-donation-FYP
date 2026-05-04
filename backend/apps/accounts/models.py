@@ -19,52 +19,9 @@ PROVINCES = [
     ("Sindh", "Sindh"),
     ("Khyber Pakhtunkhwa", "Khyber Pakhtunkhwa"),
     ("Balochistan", "Balochistan"),
-]
-
-DISTRICTS = [
-    # Punjab Districts
-    ("Lahore", "Lahore"),
-    ("Faisalabad", "Faisalabad"),
-    ("Rawalpindi", "Rawalpindi"),
-    ("Multan", "Multan"),
-    ("Gujranwala", "Gujranwala"),
-    ("Sialkot", "Sialkot"),
-    ("Sargodha", "Sargodha"),
-    ("Bahawalpur", "Bahawalpur"),
-    ("Dera Ghazi Khan", "Dera Ghazi Khan"),
-    ("Sheikhupura", "Sheikhupura"),
-    # Sindh Districts
-    ("Karachi", "Karachi"),
-    ("Hyderabad", "Hyderabad"),
-    ("Sukkur", "Sukkur"),
-    ("Larkana", "Larkana"),
-    ("Mirpurkhas", "Mirpurkhas"),
-    ("Nawabshah", "Nawabshah"),
-    # KPK Districts
-    ("Peshawar", "Peshawar"),
-    ("Mardan", "Mardan"),
-    ("Swat", "Swat"),
-    ("Abbottabad", "Abbottabad"),
-    ("Mingora", "Mingora"),
-    ("Kohat", "Kohat"),
-    ("Dera Ismail Khan", "Dera Ismail Khan"),
-    # Balochistan Districts
-    ("Quetta", "Quetta"),
-    ("Gwadar", "Gwadar"),
-    ("Turbat", "Turbat"),
-    ("Sibi", "Sibi"),
-    ("Loralai", "Loralai"),
-    # Islamabad Districts
-    ("Islamabad", "Islamabad"),
-    # Gilgit-Baltistan Districts
-    ("Gilgit", "Gilgit"),
-    ("Skardu", "Skardu"),
-    ("Hunza", "Hunza"),
-    # Azad Kashmir Districts
-    ("Muzaffarabad", "Muzaffarabad"),
-    ("Mirpur", "Mirpur"),
-    ("Rawalakot", "Rawalakot"),
-    ("Khushab", "Khushab"),
+    ("Gilgit Baltistan", "Gilgit Baltistan"),
+    ("Azad Kashmir", "Azad Kashmir"),
+    ("Islamabad Capital Territory", "Islamabad Capital Territory"),
 ]
 
 BLOOD_GROUPS = [
@@ -76,12 +33,6 @@ BLOOD_GROUPS = [
     ("AB-", "AB-"),
     ("O+", "O+"),
     ("O-", "O-"),
-]
-
-URGENCY_LEVELS = [
-    ("low", "Low"),
-    ("medium", "Medium"),
-    ("high", "High - Critical"),
 ]
 
 REQUEST_STATUS = [
@@ -98,100 +49,6 @@ DONATION_STATUS = [
     ("rejected", "Rejected"),
     ("completed", "Completed"),
 ]
-
-
-# Location Models
-class BloodGroup(models.Model):
-    """
-    BloodGroup model for standardizing blood group options across the system.
-    """
-    id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=3, unique=True)
-
-    class Meta:
-        verbose_name = "Blood Group"
-        verbose_name_plural = "Blood Groups"
-        ordering = ["name"]
-
-    def __str__(self):
-        return self.name
-
-
-class Gender(models.Model):
-    """
-    Gender model for standardizing gender options across the system.
-    """
-    id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=10, unique=True)
-
-    class Meta:
-        verbose_name = "Gender"
-        verbose_name_plural = "Genders"
-        ordering = ["name"]
-
-    def __str__(self):
-        return self.name
-
-
-class Province(models.Model):
-    """
-    Province model for hierarchical location data.
-    """
-    id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=100, unique=True)
-    code = models.CharField(max_length=10, unique=True)
-
-    class Meta:
-        verbose_name = "Province"
-        verbose_name_plural = "Provinces"
-        ordering = ["name"]
-
-    def __str__(self):
-        return self.name
-
-
-class District(models.Model):
-    """
-    District model belonging to a province.
-    """
-    id = models.AutoField(primary_key=True)
-    province = models.ForeignKey(
-        Province,
-        on_delete=models.CASCADE,
-        related_name="districts"
-    )
-    name = models.CharField(max_length=100)
-
-    class Meta:
-        verbose_name = "District"
-        verbose_name_plural = "Districts"
-        ordering = ["name"]
-        unique_together = ["province", "name"]
-
-    def __str__(self):
-        return f"{self.name}, {self.province.name}"
-
-
-class LocalLevel(models.Model):
-    """
-    Local level (town/city/area) model belonging to a district.
-    """
-    id = models.AutoField(primary_key=True)
-    district = models.ForeignKey(
-        District,
-        on_delete=models.CASCADE,
-        related_name="local_levels"
-    )
-    name = models.CharField(max_length=200)
-
-    class Meta:
-        verbose_name = "Local Level"
-        verbose_name_plural = "Local Levels"
-        ordering = ["name"]
-        unique_together = ["district", "name"]
-
-    def __str__(self):
-        return f"{self.name}, {self.district.name}"
 
 
 # Manager
@@ -218,15 +75,14 @@ class MyUserManager(BaseUserManager):
         extra_fields.setdefault("full_name", "Superuser")
         extra_fields.setdefault("phone", "")
         extra_fields.setdefault("gender", "Other")
-        # province will be set to None by default
         return self.create_user(email, password, **extra_fields)
 
 
-# User Model
+# User Model - SINGLE TABLE FOR EVERYTHING
 class MyUser(AbstractBaseUser, PermissionsMixin):
     """
     Custom User model for blood donation system.
-    Uses email as the username field and includes location-based fields for donor matching.
+    All fields directly in this table - no separate lookup tables.
     """
 
     id = models.AutoField(primary_key=True)
@@ -252,44 +108,48 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
         verbose_name="Phone Number",
         help_text="Contact phone number"
     )
-    province = models.ForeignKey(
-        Province,
-        on_delete=models.SET_NULL,
-        null=True,
+    gender = models.CharField(
+        max_length=10,
+        choices=GENDERS,
         blank=True,
+        null=True,
+        verbose_name="Gender",
+        help_text="User's gender",
+    )
+    province = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
         verbose_name="Province",
         help_text="User's province"
     )
-    district = models.ForeignKey(
-        District,
-        on_delete=models.SET_NULL,
-        null=True,
+    district = models.CharField(
+        max_length=100,
         blank=True,
+        null=True,
         verbose_name="District",
         help_text="User's district within province",
     )
-    local_level = models.ForeignKey(
-        LocalLevel,
-        on_delete=models.SET_NULL,
-        null=True,
+    local_level = models.CharField(
+        max_length=200,
         blank=True,
+        null=True,
         verbose_name="Local Level",
         help_text="Specific area or locality",
-    )
-    gender = models.ForeignKey(
-        Gender,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        verbose_name="Gender",
-        help_text="User's gender",
-        related_name="users",
     )
     date_of_birth = models.DateField(
         blank=True,
         null=True,
         verbose_name="Date of Birth",
         help_text="User's date of birth for age validation",
+    )
+    blood_group = models.CharField(
+        max_length=3,
+        choices=BLOOD_GROUPS,
+        blank=True,
+        null=True,
+        verbose_name="Blood Group",
+        help_text="User's blood group",
     )
 
     created_at = models.DateTimeField(
@@ -323,44 +183,29 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
         ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["email"]),
-            models.Index(fields=["province", "district"]),
             models.Index(fields=["created_at"]),
+            models.Index(fields=["blood_group"]),
         ]
 
     def get_full_name(self) -> str:
         """Return the user's full name."""
         return self.full_name.strip()
 
-    def get_gender_display(self) -> str:
-        """Get the human-readable gender name."""
-        return dict(self._meta.get_field("gender").choices).get(
-            self.gender, self.gender
-        )
-
     def __str__(self) -> str:
         return self.email
 
 
-# Donor Model
+# Donor Model - Uses user_id instead of ForeignKey
 class Donor(models.Model):
     """
-    Donor profile extending User model with blood donation specific information.
-    One-to-one relationship with MyUser model.
+    Donor profile with blood donation specific information.
+    References user by ID instead of ForeignKey.
     """
 
     id = models.AutoField(primary_key=True)
-    user = models.OneToOneField(
-        MyUser,
-        on_delete=models.CASCADE,
-        related_name="donor_profile",
-        verbose_name="User",
-        help_text="Reference to the user account",
-    )
-    blood_group = models.CharField(
-        max_length=3,
-        choices=BLOOD_GROUPS,
-        verbose_name="Blood Group",
-        help_text="Donor's blood type",
+    user_id = models.IntegerField(
+        verbose_name="User ID",
+        help_text="Reference to the user account ID",
     )
     is_available = models.BooleanField(
         default=True,
@@ -389,13 +234,12 @@ class Donor(models.Model):
         verbose_name_plural = "Donors"
         ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=["blood_group"]),
+            models.Index(fields=["user_id"]),
             models.Index(fields=["is_available"]),
-            models.Index(fields=["user"]),
         ]
 
     def __str__(self) -> str:
-        return f"{self.user.email} - {self.blood_group}"
+        return f"User ID: {self.user_id}"
 
     def can_donate(self) -> bool:
         """
@@ -419,12 +263,9 @@ class EmailVerification(models.Model):
     """
 
     id = models.AutoField(primary_key=True)
-    user = models.ForeignKey(
-        MyUser,
-        on_delete=models.CASCADE,
-        related_name="email_verifications",
-        verbose_name="User",
-        help_text="Reference to the user account",
+    user_id = models.IntegerField(
+        verbose_name="User ID",
+        help_text="Reference to the user account ID",
     )
     token = models.UUIDField(
         default=uuid.uuid4,
@@ -448,11 +289,11 @@ class EmailVerification(models.Model):
         ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["token"]),
-            models.Index(fields=["user", "is_used"]),
+            models.Index(fields=["user_id", "is_used"]),
         ]
 
     def __str__(self) -> str:
-        return f"{self.user.email} - {self.token}"
+        return f"User ID: {self.user_id} - {self.token}"
 
     def is_valid(self) -> bool:
         """
@@ -473,12 +314,9 @@ class PasswordReset(models.Model):
     """
 
     id = models.AutoField(primary_key=True)
-    user = models.ForeignKey(
-        MyUser,
-        on_delete=models.CASCADE,
-        related_name="password_resets",
-        verbose_name="User",
-        help_text="Reference to the user account",
+    user_id = models.IntegerField(
+        verbose_name="User ID",
+        help_text="Reference to the user account ID",
     )
     token = models.UUIDField(
         default=uuid.uuid4,
@@ -502,11 +340,11 @@ class PasswordReset(models.Model):
         ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["token"]),
-            models.Index(fields=["user", "is_used"]),
+            models.Index(fields=["user_id", "is_used"]),
         ]
 
     def __str__(self) -> str:
-        return f"{self.user.email} - {self.token}"
+        return f"User ID: {self.user_id} - {self.token}"
 
     def is_valid(self) -> bool:
         """

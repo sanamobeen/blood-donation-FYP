@@ -8,7 +8,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from django.core.mail import send_mail
 from django.conf import settings
-from .models import MyUser, Donor, Province, District, LocalLevel, Gender, BloodGroup
+from .models import MyUser, Donor
 from .serializers import (
     RegisterSerializer,
     LoginSerializer,
@@ -17,11 +17,6 @@ from .serializers import (
     DonorRegistrationSerializer,
     ForgotPasswordSerializer,
     ResetPasswordSerializer,
-    ProvinceSerializer,
-    DistrictSerializer,
-    LocalLevelSerializer,
-    GenderSerializer,
-    BloodGroupSerializer,
 )
 
 logger = logging.getLogger(__name__)
@@ -91,7 +86,7 @@ class RegisterView(generics.GenericAPIView):
             # Create email verification token (optional but recommended)
             from .models import EmailVerification
 
-            verification = EmailVerification.objects.create(user=user)
+            verification = EmailVerification.objects.create(user_id=user.id)
 
             # TODO: Send actual email here
             logger.info(
@@ -244,7 +239,7 @@ class UpdateDonorProfileView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         try:
-            return self.request.user.donor_profile
+            return Donor.objects.get(user_id=self.request.user.id)
         except Donor.DoesNotExist:
             return Response(
                 {"error": "You are not registered as a donor"},
@@ -283,10 +278,10 @@ class SendVerificationEmailView(generics.GenericAPIView):
             from .models import EmailVerification
             import uuid
 
-            EmailVerification.objects.filter(user=user, is_used=False).delete()
+            EmailVerification.objects.filter(user_id=user.id, is_used=False).delete()
 
             # Create new verification token
-            verification = EmailVerification.objects.create(user=user)
+            verification = EmailVerification.objects.create(user_id=user.id)
 
             # TODO: Send actual email here
             # For now, return the token in response (for testing only)
@@ -338,8 +333,10 @@ class VerifyEmailView(generics.GenericAPIView):
                 )
 
             # Mark user as active and verification as used
-            verification.user.is_active = True
-            verification.user.save()
+            from .models import MyUser
+            user = MyUser.objects.get(id=verification.user_id)
+            user.is_active = True
+            user.save()
             verification.is_used = True
             verification.save()
 
@@ -385,10 +382,10 @@ class ForgotPasswordView(generics.GenericAPIView):
                 # Delete any existing unused reset tokens for this user
                 from .models import PasswordReset
 
-                PasswordReset.objects.filter(user=user, is_used=False).delete()
+                PasswordReset.objects.filter(user_id=user.id, is_used=False).delete()
 
                 # Create new reset token
-                reset = PasswordReset.objects.create(user=user)
+                reset = PasswordReset.objects.create(user_id=user.id)
 
                 # Log the token for development/testing
                 logger.info(
@@ -525,69 +522,3 @@ class ResetPasswordView(generics.GenericAPIView):
             )
 
 
-# LOCATION VIEWS
-class ProvinceListView(generics.ListAPIView):
-    """
-    List all provinces.
-    Returns all provinces with their codes.
-    """
-    queryset = Province.objects.all()
-    serializer_class = ProvinceSerializer
-    permission_classes = [permissions.AllowAny]
-    pagination_class = None
-
-
-class DistrictListView(generics.ListAPIView):
-    """
-    List all districts, optionally filtered by province.
-    Use ?province=<province_id> to filter by province.
-    """
-    serializer_class = DistrictSerializer
-    permission_classes = [permissions.AllowAny]
-    pagination_class = None
-
-    def get_queryset(self):
-        queryset = District.objects.all()
-        province_id = self.request.query_params.get('province')
-        if province_id:
-            queryset = queryset.filter(province_id=province_id)
-        return queryset
-
-
-class LocalLevelListView(generics.ListAPIView):
-    """
-    List all local levels, optionally filtered by district.
-    Use ?district=<district_id> to filter by district.
-    """
-    serializer_class = LocalLevelSerializer
-    permission_classes = [permissions.AllowAny]
-    pagination_class = None
-
-    def get_queryset(self):
-        queryset = LocalLevel.objects.all()
-        district_id = self.request.query_params.get('district')
-        if district_id:
-            queryset = queryset.filter(district_id=district_id)
-        return queryset
-
-
-class GenderListView(generics.ListAPIView):
-    """
-    List all genders.
-    Returns all available gender options.
-    """
-    queryset = Gender.objects.all()
-    serializer_class = GenderSerializer
-    permission_classes = [permissions.AllowAny]
-    pagination_class = None
-
-
-class BloodGroupListView(generics.ListAPIView):
-    """
-    List all blood groups.
-    Returns all available blood group options.
-    """
-    queryset = BloodGroup.objects.all()
-    serializer_class = BloodGroupSerializer
-    permission_classes = [permissions.AllowAny]
-    pagination_class = None
