@@ -5,58 +5,12 @@ from datetime import datetime, date
 from typing import Dict, Any
 from rest_framework import serializers
 from django.core.validators import ValidationError
-from .models import MyUser, Donor, Province, District, LocalLevel, Gender, BloodGroup
+from .models import MyUser, Donor
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.hashers import make_password
 
 logger = logging.getLogger(__name__)
-
-
-# LOCATION SERIALIZERS
-class BloodGroupSerializer(serializers.ModelSerializer):
-    """Serializer for BloodGroup model"""
-
-    class Meta:
-        model = BloodGroup
-        fields = ["id", "name"]
-
-
-class GenderSerializer(serializers.ModelSerializer):
-    """Serializer for Gender model"""
-
-    class Meta:
-        model = Gender
-        fields = ["id", "name"]
-
-
-class ProvinceSerializer(serializers.ModelSerializer):
-    """Serializer for Province model"""
-
-    class Meta:
-        model = Province
-        fields = ["id", "name", "code"]
-
-
-class DistrictSerializer(serializers.ModelSerializer):
-    """Serializer for District model with province information"""
-
-    province_name = serializers.CharField(source="province.name", read_only=True)
-
-    class Meta:
-        model = District
-        fields = ["id", "name", "province", "province_name"]
-
-
-class LocalLevelSerializer(serializers.ModelSerializer):
-    """Serializer for LocalLevel model with district information"""
-
-    district_name = serializers.CharField(source="district.name", read_only=True)
-    province_name = serializers.CharField(source="district.province.name", read_only=True)
-
-    class Meta:
-        model = LocalLevel
-        fields = ["id", "name", "district", "district_name", "province_name"]
 
 
 
@@ -151,57 +105,6 @@ class RegisterSerializer(serializers.ModelSerializer):
             "confirm_password",
         ]
 
-    def to_internal_value(self, data):
-        """
-        Convert string values to model instances for foreign key fields.
-        This allows the frontend to send string names instead of integer IDs.
-        """
-        # Make a mutable copy of data
-        data = data.copy()
-
-        # Convert gender string to Gender instance
-        if 'gender' in data and data['gender']:
-            try:
-                gender_obj = Gender.objects.get(name=str(data['gender']))
-                data['gender'] = gender_obj.id
-            except Gender.DoesNotExist:
-                raise serializers.ValidationError({
-                    "gender": f"Gender '{data['gender']}' not found. Valid options: Male, Female, Other"
-                })
-
-        # Convert province string to Province instance
-        if 'province' in data and data['province']:
-            try:
-                province_obj = Province.objects.get(name=str(data['province']))
-                data['province'] = province_obj.id
-            except Province.DoesNotExist:
-                raise serializers.ValidationError({
-                    "province": f"Province '{data['province']}' not found. Valid options: Punjab, Sindh, Khyber Pakhtunkhwa, Balochistan"
-                })
-
-        # Convert district string to District instance
-        if 'district' in data and data['district']:
-            try:
-                district_obj = District.objects.get(name=str(data['district']))
-                data['district'] = district_obj.id
-            except District.DoesNotExist:
-                raise serializers.ValidationError({
-                    "district": f"District '{data['district']}' not found"
-                })
-
-        # Convert local_level string to LocalLevel instance
-        if 'local_level' in data and data['local_level']:
-            try:
-                local_level_obj = LocalLevel.objects.get(name=str(data['local_level']))
-                data['local_level'] = local_level_obj.id
-            except LocalLevel.DoesNotExist:
-                raise serializers.ValidationError({
-                    "local_level": f"Local level '{data['local_level']}' not found"
-                })
-
-        # Call parent method to continue normal processing
-        return super().to_internal_value(data)
-
     def validate(self, attrs: Dict[str, Any]) -> Dict[str, Any]:
         """
         Comprehensive validation for user registration.
@@ -277,9 +180,8 @@ class RegisterSerializer(serializers.ModelSerializer):
 
         # Validate blood_group if provided
         if "blood_group" in attrs and attrs["blood_group"]:
-            valid_blood_groups = [
-                choice[0] for choice in Donor._meta.get_field("blood_group").choices
-            ]
+            from .models import BLOOD_GROUPS
+            valid_blood_groups = [choice[0] for choice in BLOOD_GROUPS]
             if attrs["blood_group"] not in valid_blood_groups:
                 raise serializers.ValidationError(
                     {"blood_group": "Invalid blood group"}
@@ -294,13 +196,13 @@ class RegisterSerializer(serializers.ModelSerializer):
         """
         from django.db import transaction
 
-        blood_group = validated_data.pop("blood_group", None)
         confirm_password = validated_data.pop(
             "confirm_password"
         )  # Remove confirm_password before creating user
 
         # Extract password before creating user object
         password = validated_data.pop("password")
+        blood_group = validated_data.get("blood_group")
 
         try:
             with transaction.atomic():
@@ -313,7 +215,7 @@ class RegisterSerializer(serializers.ModelSerializer):
                 # Create donor profile if blood_group is provided
                 if blood_group:
                     Donor.objects.create(
-                        user=user, blood_group=blood_group, is_available=True
+                        user_id=user.id, is_available=True
                     )
                     logger.info(f"Created new donor account: {user.email}")
 
@@ -379,28 +281,14 @@ class LoginSerializer(serializers.Serializer):
 
 # DONOR SERIALIZER
 class DonorSerializer(serializers.ModelSerializer):
-    # Include user information as individual fields instead of nested object
-    email = serializers.EmailField(source="user.email", read_only=True)
-    full_name = serializers.CharField(source="user.full_name", read_only=True)
-    phone = serializers.CharField(source="user.phone", read_only=True)
-    province = serializers.CharField(source="user.province", read_only=True)
-    district = serializers.CharField(source="user.district", read_only=True)
-    local_level = serializers.CharField(source="user.local_level", read_only=True)
-    gender = serializers.CharField(source="user.gender", read_only=True)
-    date_of_birth = serializers.DateField(source="user.date_of_birth", read_only=True)
+    # Simple serializer - user info is in MyUser table
+    blood_group = serializers.CharField(source="user.blood_group", read_only=True)
 
     class Meta:
         model = Donor
         fields = [
             "id",
-            "email",
-            "full_name",
-            "phone",
-            "province",
-            "district",
-            "local_level",
-            "gender",
-            "date_of_birth",
+            "user_id",
             "blood_group",
             "is_available",
             "last_donation_date",
@@ -414,13 +302,13 @@ class DonorSerializer(serializers.ModelSerializer):
 class DonorRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Donor
-        fields = ["blood_group", "is_available"]
+        fields = ["is_available"]
 
     def create(self, validated_data):
         user = self.context["request"].user
-        if Donor.objects.filter(user=user).exists():
+        if Donor.objects.filter(user_id=user.id).exists():
             raise serializers.ValidationError("User is already registered as a donor")
-        validated_data["user"] = user
+        validated_data["user_id"] = user.id
         return super().create(validated_data)
 
 

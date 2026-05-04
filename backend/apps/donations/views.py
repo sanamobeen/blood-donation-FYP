@@ -3,7 +3,6 @@ from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Donation
 from .serializers import DonationSerializer, DonationListSerializer
-from apps.accounts.models import Donor
 
 
 class DonationCreateView(generics.CreateAPIView):
@@ -41,11 +40,7 @@ class MyDonationsView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        try:
-            donor = self.request.user.donor_profile
-            return Donation.objects.filter(donor=donor)
-        except Donor.DoesNotExist:
-            return Donation.objects.none()
+        return Donation.objects.filter(donor_id=self.request.user.id)
 
 
 class AcceptDonationView(generics.UpdateAPIView):
@@ -61,7 +56,7 @@ class AcceptDonationView(generics.UpdateAPIView):
             )
 
         # Check if the current user is the donor
-        if donation.donor.user != request.user:
+        if donation.donor_id != request.user.id:
             return Response(
                 {"error": "You can only accept your own donation requests"},
                 status=status.HTTP_403_FORBIDDEN,

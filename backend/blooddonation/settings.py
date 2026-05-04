@@ -1,3 +1,4 @@
+
 """
 Django settings for blooddonation project.
 Production-ready configuration following Django security best practices.
@@ -11,10 +12,7 @@ import os
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get(
-    "DJANGO_SECRET_KEY",
-    "django-insecure-foj8k^u0kb0n@%8qh2z#wilovy%pyomeq=j1hn9c3nz1w9&lz3",
-)
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "change-this-in-production-use-environment-variable")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG", "True") == "True"
@@ -49,7 +47,6 @@ INSTALLED_APPS = [
     "corsheaders",
     "django_filters",
     "rest_framework_simplejwt",
-    "rest_framework_simplejwt.token_blacklist",
     "apps.accounts",
     "apps.blood_requests",
     "apps.donations",
@@ -90,11 +87,11 @@ WSGI_APPLICATION = "blooddonation.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
-        "NAME": os.environ.get("DB_NAME", "blood_donation_db"),
-        "USER": os.environ.get("DB_USER", "root"),
-        "PASSWORD": os.environ.get("DB_PASSWORD", "password"),
-        "HOST": os.environ.get("DB_HOST", "localhost"),
-        "PORT": os.environ.get("DB_PORT", "3306"),
+        "NAME": "blood_donor_db",   # 👈 your DB name
+        "USER": "root",
+        "PASSWORD": "password",
+        "HOST": "localhost",
+        "PORT": "3306",
         "OPTIONS": {
             "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
             "charset": "utf8mb4",
@@ -250,9 +247,9 @@ EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = "sanamobin7@gmail.com"
-EMAIL_HOST_PASSWORD = "shyy wxjg jtck refq"
-DEFAULT_FROM_EMAIL = "sanamobin7@gmail.com"
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "")
 
 # Option 2: Show emails in console (for testing - uncomment below)
 # EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
