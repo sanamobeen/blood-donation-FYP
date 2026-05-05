@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'widgets/sos/sos_button.dart';
 import 'package:geolocator/geolocator.dart';
 import 'emergency_contacts_page.dart';
+import 'services/emergency_contacts_service.dart';
+import 'services/location_service.dart';
+import 'services/sos_notification_service.dart';
 
 class EmergencyPage extends StatefulWidget {
   const EmergencyPage({super.key});
@@ -11,7 +14,6 @@ class EmergencyPage extends StatefulWidget {
 }
 
 class _EmergencyPageState extends State<EmergencyPage> {
-  bool _isSOSActive = false;
   final EmergencyContactsService _contactsService = EmergencyContactsService();
   final LocationService _locationService = LocationService();
   final SOSNotificationService _notificationService = SOSNotificationService();
