@@ -15,6 +15,41 @@ class LocationService {
   String? get currentAddress => _currentAddress;
   bool get isTracking => _isTracking;
 
+  static Future<Position> getCurrentPosition() async {
+    final service = LocationService();
+    final position = await service.getCurrentLocation();
+
+    if (position == null) {
+      throw Exception('Location permission denied or location services disabled');
+    }
+
+    return position;
+  }
+
+  static Future<String> getAddressFromCoordinates(
+    double latitude,
+    double longitude,
+  ) async {
+    try {
+      final placemarks = await placemarkFromCoordinates(latitude, longitude);
+
+      if (placemarks.isEmpty) {
+        return 'Unknown location';
+      }
+
+      final place = placemarks.first;
+      final parts = [
+        place.street,
+        place.locality,
+        place.country,
+      ].where((part) => part != null && part.isNotEmpty).cast<String>();
+
+      return parts.isEmpty ? 'Unknown location' : parts.join(', ');
+    } catch (e) {
+      return 'Unknown location';
+    }
+  }
+
   Future<bool> _checkPermission() async {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {

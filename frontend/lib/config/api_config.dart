@@ -2,21 +2,33 @@ class ApiConfig {
   // Base URL configuration - automatically detects the best URL to use
 
   // For Android emulator trying to connect to host machine
-  static const String emulatorUrl = 'http://10.0.2.2:8000';
+  static const String emulatorUrl = 'http://10.0.2.2:8001';
 
   // For physical device on the same network (replace with your computer's IP)
-  static const String deviceUrl = 'http://192.168.56.1:8000';  // Your PC's current IP
+  static const String deviceUrl = 'http://10.41.158.136:8001';  // Your PC's current Wi-Fi IP
 
   // For testing on same machine (web debug)
-  static const String localUrl = 'http://localhost:8000';
+  static const String localUrl = 'http://localhost:8001';
 
   // For iOS simulator
-  static const String iosUrl = 'http://127.0.0.1:8000';
+  static const String iosUrl = 'http://127.0.0.1:8001';
 
   // Try multiple URLs in order
   static String get baseUrl {
-    // Try emulator first, then device URL if emulator fails
-    return deviceUrl;  // Changed to device URL for more reliable connection
+    // For local development - try local URL first, then device URL
+    // Uncomment the appropriate line based on your testing environment
+
+    // Testing on Web or Flutter desktop
+    // return localUrl;
+
+    // Testing on Android emulator
+    // return emulatorUrl;
+
+    // Testing on physical device on same network
+    return deviceUrl;
+
+    // Testing on iOS simulator
+    // return iosUrl;
   }
 
   // UNCOMMENT the line below if testing on physical device:

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'find_donor.dart';
 import 'blood_donation_form_page.dart';
 import 'feedback_page.dart';
+import 'emergency_page.dart';
 import 'emergency_contacts_page.dart';
 import 'services/language_service.dart';
 
