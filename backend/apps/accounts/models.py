@@ -19,52 +19,166 @@ PROVINCES = [
     ("Sindh", "Sindh"),
     ("Khyber Pakhtunkhwa", "Khyber Pakhtunkhwa"),
     ("Balochistan", "Balochistan"),
+    ("Islamabad Capital Territory", "Islamabad Capital Territory"),
+    ("Gilgit-Baltistan", "Gilgit-Baltistan"),
+    ("Azad Jammu and Kashmir", "Azad Jammu and Kashmir"),
 ]
 
 DISTRICTS = [
-    # Punjab Districts
-    ("Lahore", "Lahore"),
-    ("Faisalabad", "Faisalabad"),
-    ("Rawalpindi", "Rawalpindi"),
-    ("Multan", "Multan"),
-    ("Gujranwala", "Gujranwala"),
-    ("Sialkot", "Sialkot"),
-    ("Sargodha", "Sargodha"),
+    # Punjab
+    ("Ahmedpur East", "Ahmedpur East"),
+    ("Arifwala", "Arifwala"),
+    ("Attock", "Attock"),
+    ("Bahawalnagar", "Bahawalnagar"),
     ("Bahawalpur", "Bahawalpur"),
+    ("Bhakkar", "Bhakkar"),
+    ("Burewala", "Burewala"),
+    ("Chakwal", "Chakwal"),
+    ("Chiniot", "Chiniot"),
     ("Dera Ghazi Khan", "Dera Ghazi Khan"),
-    ("Sheikhupura", "Sheikhupura"),
-    # Sindh Districts
-    ("Karachi", "Karachi"),
-    ("Hyderabad", "Hyderabad"),
-    ("Sukkur", "Sukkur"),
-    ("Larkana", "Larkana"),
-    ("Mirpurkhas", "Mirpurkhas"),
-    ("Nawabshah", "Nawabshah"),
-    # KPK Districts
-    ("Peshawar", "Peshawar"),
-    ("Mardan", "Mardan"),
-    ("Swat", "Swat"),
-    ("Abbottabad", "Abbottabad"),
-    ("Mingora", "Mingora"),
-    ("Kohat", "Kohat"),
-    ("Dera Ismail Khan", "Dera Ismail Khan"),
-    # Balochistan Districts
-    ("Quetta", "Quetta"),
-    ("Gwadar", "Gwadar"),
-    ("Turbat", "Turbat"),
-    ("Sibi", "Sibi"),
-    ("Loralai", "Loralai"),
-    # Islamabad Districts
-    ("Islamabad", "Islamabad"),
-    # Gilgit-Baltistan Districts
-    ("Gilgit", "Gilgit"),
-    ("Skardu", "Skardu"),
-    ("Hunza", "Hunza"),
-    # Azad Kashmir Districts
-    ("Muzaffarabad", "Muzaffarabad"),
-    ("Mirpur", "Mirpur"),
-    ("Rawalakot", "Rawalakot"),
+    ("Faisalabad", "Faisalabad"),
+    ("Ferozewala", "Ferozewala"),
+    ("Gujranwala", "Gujranwala"),
+    ("Gujrat", "Gujrat"),
+    ("Hafizabad", "Hafizabad"),
+    ("Jhang", "Jhang"),
+    ("Jhelum", "Jhelum"),
+    ("Kasur", "Kasur"),
+    ("Khanewal", "Khanewal"),
     ("Khushab", "Khushab"),
+    ("Lahore", "Lahore"),
+    ("Layyah", "Layyah"),
+    ("Lodhran", "Lodhran"),
+    ("Mandi Bahauddin", "Mandi Bahauddin"),
+    ("Mianwali", "Mianwali"),
+    ("Multan", "Multan"),
+    ("Muzaffargarh", "Muzaffargarh"),
+    ("Nankana Sahib", "Nankana Sahib"),
+    ("Narowal", "Narowal"),
+    ("Okara", "Okara"),
+    ("Pakpattan", "Pakpattan"),
+    ("Rahim Yar Khan", "Rahim Yar Khan"),
+    ("Rajanpur", "Rajanpur"),
+    ("Rawalpindi", "Rawalpindi"),
+    ("Sahiwal", "Sahiwal"),
+    ("Sargodha", "Sargodha"),
+    ("Sheikhupura", "Sheikhupura"),
+    ("Sialkot", "Sialkot"),
+    ("Toba Tek Singh", "Toba Tek Singh"),
+    ("Vehari", "Vehari"),
+    ("Wazirabad", "Wazirabad"),
+    # Sindh
+    ("Badin", "Badin"),
+    ("Bhan", "Bhan"),
+    ("Chachro", "Chachro"),
+    ("Dadu", "Dadu"),
+    ("Diplo", "Diplo"),
+    ("Ghotki", "Ghotki"),
+    ("Hyderabad", "Hyderabad"),
+    ("Jacobabad", "Jacobabad"),
+    ("Jamshoro", "Jamshoro"),
+    ("Karachi", "Karachi"),
+    ("Kashmore", "Kashmore"),
+    ("Kandhkot", "Kandhkot"),
+    ("Khairpur", "Khairpur"),
+    ("Kotri", "Kotri"),
+    ("Larkana", "Larkana"),
+    ("Matiari", "Matiari"),
+    ("Mirpur Khas", "Mirpur Khas"),
+    ("Mithi", "Mithi"),
+    ("Nawabshah", "Nawabshah"),
+    ("Naushehro Feroze", "Naushehro Feroze"),
+    ("Qambar", "Qambar"),
+    ("Sanghar", "Sanghar"),
+    ("Shahdadkot", "Shahdadkot"),
+    ("Shikarpur", "Shikarpur"),
+    ("Sukkur", "Sukkur"),
+    ("Tando Adam", "Tando Adam"),
+    ("Tando Allahyar", "Tando Allahyar"),
+    ("Thatta", "Thatta"),
+    ("Umerkot", "Umerkot"),
+    # Khyber Pakhtunkhwa
+    ("Abbottabad", "Abbottabad"),
+    ("Bannu", "Bannu"),
+    ("Batagram", "Batagram"),
+    ("Buner", "Buner"),
+    ("Charsadda", "Charsadda"),
+    ("Chitral", "Chitral"),
+    ("Dera Ismail Khan", "Dera Ismail Khan"),
+    ("Dir", "Dir"),
+    ("Haripur", "Haripur"),
+    ("Karak", "Karak"),
+    ("Kohat", "Kohat"),
+    ("Kohistan", "Kohistan"),
+    ("Lakki Marwat", "Lakki Marwat"),
+    ("Lower Dir", "Lower Dir"),
+    ("Malakand", "Malakand"),
+    ("Mansehra", "Mansehra"),
+    ("Mardan", "Mardan"),
+    ("Nowshera", "Nowshera"),
+    ("Peshawar", "Peshawar"),
+    ("Shangla", "Shangla"),
+    ("Swabi", "Swabi"),
+    ("Swat", "Swat"),
+    ("Tank", "Tank"),
+    ("Upper Dir", "Upper Dir"),
+    # Balochistan
+    ("Awaran", "Awaran"),
+    ("Barkhan", "Barkhan"),
+    ("Bolan", "Bolan"),
+    ("Chagai", "Chagai"),
+    ("Dera Bugti", "Dera Bugti"),
+    ("Gwadar", "Gwadar"),
+    ("Harnai", "Harnai"),
+    ("Jafarabad", "Jafarabad"),
+    ("Jhal Magsi", "Jhal Magsi"),
+    ("Kalat", "Kalat"),
+    ("Kech", "Kech"),
+    ("Kharan", "Kharan"),
+    ("Khuzdar", "Khuzdar"),
+    ("Killa Abdullah", "Killa Abdullah"),
+    ("Killa Saifullah", "Killa Saifullah"),
+    ("Kohlu", "Kohlu"),
+    ("Lasbela", "Lasbela"),
+    ("Loralai", "Loralai"),
+    ("Mastung", "Mastung"),
+    ("Musakhel", "Musakhel"),
+    ("Nasirabad", "Nasirabad"),
+    ("Nushki", "Nushki"),
+    ("Panjgur", "Panjgur"),
+    ("Pishin", "Pishin"),
+    ("Quetta", "Quetta"),
+    ("Sherani", "Sherani"),
+    ("Sibi", "Sibi"),
+    ("Sohbatpur", "Sohbatpur"),
+    ("Washuk", "Washuk"),
+    ("Zhob", "Zhob"),
+    ("Ziarat", "Ziarat"),
+    # Islamabad Capital Territory
+    ("Islamabad", "Islamabad"),
+    # Gilgit-Baltistan
+    ("Astore", "Astore"),
+    ("Ghizer", "Ghizer"),
+    ("Ghanche", "Ghanche"),
+    ("Gilgit", "Gilgit"),
+    ("Hunza", "Hunza"),
+    ("Nagar", "Nagar"),
+    ("Skardu", "Skardu"),
+    ("Shigar", "Shigar"),
+    ("Kharmang", "Kharmang"),
+    ("Roundu", "Roundu"),
+    # Azad Jammu and Kashmir
+    ("Bagh", "Bagh"),
+    ("Bhimber", "Bhimber"),
+    ("Hattian", "Hattian"),
+    ("Haveli", "Haveli"),
+    ("Kotli", "Kotli"),
+    ("Mirpur", "Mirpur"),
+    ("Muzaffarabad", "Muzaffarabad"),
+    ("Neelum", "Neelum"),
+    ("Poonch", "Poonch"),
+    ("Rawalakot", "Rawalakot"),
+    ("Sudhanoti", "Sudhanoti"),
 ]
 
 BLOOD_GROUPS = [
@@ -76,12 +190,6 @@ BLOOD_GROUPS = [
     ("AB-", "AB-"),
     ("O+", "O+"),
     ("O-", "O-"),
-]
-
-URGENCY_LEVELS = [
-    ("low", "Low"),
-    ("medium", "Medium"),
-    ("high", "High - Critical"),
 ]
 
 REQUEST_STATUS = [
@@ -123,16 +231,15 @@ class MyUserManager(BaseUserManager):
         extra_fields.setdefault("is_active", True)
         extra_fields.setdefault("full_name", "Superuser")
         extra_fields.setdefault("phone", "")
-        extra_fields.setdefault("province", "Punjab")
         extra_fields.setdefault("gender", "Other")
         return self.create_user(email, password, **extra_fields)
 
 
-# User Model
+# User Model - SINGLE TABLE FOR EVERYTHING
 class MyUser(AbstractBaseUser, PermissionsMixin):
     """
     Custom User model for blood donation system.
-    Uses email as the username field and includes location-based fields for donor matching.
+    All fields directly in this table - no separate lookup tables.
     """
 
     id = models.AutoField(primary_key=True)
@@ -158,10 +265,19 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
         verbose_name="Phone Number",
         help_text="Contact phone number"
     )
+    gender = models.CharField(
+        max_length=10,
+        choices=GENDERS,
+        blank=True,
+        null=True,
+        verbose_name="Gender",
+        help_text="User's gender",
+    )
     province = models.CharField(
         max_length=100,
         choices=PROVINCES,
-        default="Punjab",
+        blank=True,
+        null=True,
         verbose_name="Province",
         help_text="User's province"
     )
@@ -169,29 +285,30 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
         max_length=100,
         choices=DISTRICTS,
         blank=True,
-        default="",
+        null=True,
         verbose_name="District",
         help_text="User's district within province",
     )
     local_level = models.CharField(
         max_length=200,
         blank=True,
-        default="",
+        null=True,
         verbose_name="Local Level",
         help_text="Specific area or locality",
-    )
-    gender = models.CharField(
-        max_length=6,
-        choices=GENDERS,
-        default="Other",
-        verbose_name="Gender",
-        help_text="User's gender",
     )
     date_of_birth = models.DateField(
         blank=True,
         null=True,
         verbose_name="Date of Birth",
         help_text="User's date of birth for age validation",
+    )
+    blood_group = models.CharField(
+        max_length=3,
+        choices=BLOOD_GROUPS,
+        blank=True,
+        null=True,
+        verbose_name="Blood Group",
+        help_text="User's blood group",
     )
 
     created_at = models.DateTimeField(
@@ -225,56 +342,29 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
         ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["email"]),
-            models.Index(fields=["province", "district"]),
             models.Index(fields=["created_at"]),
+            models.Index(fields=["blood_group"]),
         ]
 
     def get_full_name(self) -> str:
         """Return the user's full name."""
         return self.full_name.strip()
 
-    def get_province_display(self) -> str:
-        """Get the human-readable province name."""
-        return dict(self._meta.get_field("province").choices).get(
-            self.province, self.province
-        )
-
-    def get_district_display(self) -> str:
-        """Get the human-readable district name."""
-        return dict(self._meta.get_field("district").choices).get(
-            self.district, self.district
-        )
-
-    def get_gender_display(self) -> str:
-        """Get the human-readable gender name."""
-        return dict(self._meta.get_field("gender").choices).get(
-            self.gender, self.gender
-        )
-
     def __str__(self) -> str:
         return self.email
 
 
-# Donor Model
+# Donor Model - Uses user_id instead of ForeignKey
 class Donor(models.Model):
     """
-    Donor profile extending User model with blood donation specific information.
-    One-to-one relationship with MyUser model.
+    Donor profile with blood donation specific information.
+    References user by ID instead of ForeignKey.
     """
 
     id = models.AutoField(primary_key=True)
-    user = models.OneToOneField(
-        MyUser,
-        on_delete=models.CASCADE,
-        related_name="donor_profile",
-        verbose_name="User",
-        help_text="Reference to the user account",
-    )
-    blood_group = models.CharField(
-        max_length=3,
-        choices=BLOOD_GROUPS,
-        verbose_name="Blood Group",
-        help_text="Donor's blood type",
+    user_id = models.IntegerField(
+        verbose_name="User ID",
+        help_text="Reference to the user account ID",
     )
     is_available = models.BooleanField(
         default=True,
@@ -303,13 +393,12 @@ class Donor(models.Model):
         verbose_name_plural = "Donors"
         ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=["blood_group"]),
+            models.Index(fields=["user_id"]),
             models.Index(fields=["is_available"]),
-            models.Index(fields=["user"]),
         ]
 
     def __str__(self) -> str:
-        return f"{self.user.email} - {self.blood_group}"
+        return f"User ID: {self.user_id}"
 
     def can_donate(self) -> bool:
         """
@@ -333,12 +422,9 @@ class EmailVerification(models.Model):
     """
 
     id = models.AutoField(primary_key=True)
-    user = models.ForeignKey(
-        MyUser,
-        on_delete=models.CASCADE,
-        related_name="email_verifications",
-        verbose_name="User",
-        help_text="Reference to the user account",
+    user_id = models.IntegerField(
+        verbose_name="User ID",
+        help_text="Reference to the user account ID",
     )
     token = models.UUIDField(
         default=uuid.uuid4,
@@ -362,11 +448,11 @@ class EmailVerification(models.Model):
         ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["token"]),
-            models.Index(fields=["user", "is_used"]),
+            models.Index(fields=["user_id", "is_used"]),
         ]
 
     def __str__(self) -> str:
-        return f"{self.user.email} - {self.token}"
+        return f"User ID: {self.user_id} - {self.token}"
 
     def is_valid(self) -> bool:
         """
@@ -387,12 +473,9 @@ class PasswordReset(models.Model):
     """
 
     id = models.AutoField(primary_key=True)
-    user = models.ForeignKey(
-        MyUser,
-        on_delete=models.CASCADE,
-        related_name="password_resets",
-        verbose_name="User",
-        help_text="Reference to the user account",
+    user_id = models.IntegerField(
+        verbose_name="User ID",
+        help_text="Reference to the user account ID",
     )
     token = models.UUIDField(
         default=uuid.uuid4,
@@ -416,11 +499,11 @@ class PasswordReset(models.Model):
         ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["token"]),
-            models.Index(fields=["user", "is_used"]),
+            models.Index(fields=["user_id", "is_used"]),
         ]
 
     def __str__(self) -> str:
-        return f"{self.user.email} - {self.token}"
+        return f"User ID: {self.user_id} - {self.token}"
 
     def is_valid(self) -> bool:
         """

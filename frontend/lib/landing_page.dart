@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'login_page.dart';
 import 'register_page.dart';
 import 'find_donor.dart';
@@ -8,6 +9,7 @@ import 'menu_page.dart';
 import 'profile_page.dart';
 import 'theme_provider.dart';
 import 'blood_donation_form_page.dart';
+import 'my_blood_requests_page.dart';
 
 class LandingPage extends StatefulWidget {
   const LandingPage({super.key});
@@ -18,13 +20,45 @@ class LandingPage extends StatefulWidget {
 
 class _LandingPageState extends State<LandingPage> {
   final ScrollController _scrollController = ScrollController();
-  final PageController _pageController = PageController();
-  int _carouselIndex = 0;
+  // PageController disabled - carousel temporarily removed for performance
+  // final PageController _pageController = PageController();
+  // int _carouselIndex = 0;
+  bool _isLoggedIn = false;
+
+  // Static const data to prevent rebuilding
+  static const List<Map<String, dynamic>> _features = [
+    {'title': 'Emergency Blood Requests', 'icon': Icons.emergency, 'color': Colors.red, 'description': 'Urgent blood requests in real-time'},
+    {'title': 'Find Donors Nearby', 'icon': Icons.location_on, 'color': Colors.blue, 'description': 'Locate donors in your area'},
+    {'title': '24/7 AI Assistant', 'icon': Icons.smart_toy, 'color': Colors.purple, 'description': 'Get help anytime'},
+    {'title': 'Verified Donors', 'icon': Icons.verified, 'color': Colors.green, 'description': 'All donors are verified'},
+    {'title': 'Real-time Notifications', 'icon': Icons.notifications_active, 'color': Colors.orange, 'description': 'Instant alerts for requests'},
+    {'title': 'Simple & Fast Process', 'icon': Icons.flash_on, 'color': Colors.teal, 'description': 'Quick and easy donations'},
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _checkLoginStatus();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Don't check login status here to avoid unnecessary rebuilds
+    // Already checked in initState
+  }
+
+  Future<void> _checkLoginStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isLoggedIn = prefs.getBool('is_logged_in') ?? false;
+    });
+  }
 
   @override
   void dispose() {
     _scrollController.dispose();
-    _pageController.dispose();
+    // _pageController disposed when carousel was disabled
     super.dispose();
   }
 
@@ -93,48 +127,56 @@ class _LandingPageState extends State<LandingPage> {
             _navButton("Home", Icons.home, null),
             _navButton("Find donor", Icons.search, const FindDonorsPage()),
             _navButton("Blood Request", Icons.favorite, const EmergencyPage()),
+            _navButton("My Requests", Icons.list_alt, const MyBloodRequestsPage()),
             _navButton("AI Assistant", Icons.auto_awesome, const AIAssistantPage()),
             _navButton("Login", Icons.login, const LoginPage()),
             _actionButton("Register", Icons.person_add, const RegisterPage(), Colors.white, Colors.red.shade900),
           ],
         ],
       ),
-      body: SingleChildScrollView(
-        controller: _scrollController,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _savingLivesBadge(),
-            _findNearbyDonorCard(isDark, isSmallScreen),
-            _quickActionsCard(isSmallScreen),
-            _imageCarousel(isDark),
-            _whyChooseUsSection(isDark),
-            const SizedBox(height: 20),
-          ],
+      body: RepaintBoundary(
+        child: SafeArea(
+          child: SingleChildScrollView(
+            controller: _scrollController,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _savingLivesBadge(),
+                _findNearbyDonorCard(isDark, isSmallScreen),
+                if (!_isLoggedIn) _authCard(isDark, isSmallScreen),
+                _quickActionsCard(isSmallScreen),
+                _imageCarousel(isDark),
+                _whyChooseUsSection(isDark),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
         ),
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.red.shade900,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
-              blurRadius: 10,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildBottomNavItem(Icons.home, "Home", 0, null),
-                _buildBottomNavItem(Icons.water_drop, "Blood Request", 1, const EmergencyPage()),
-                _buildBottomNavItem(Icons.chat, "AI Assistant", 2, const AIAssistantPage()),
-                _buildBottomNavItem(Icons.menu, "Menu", 3, const MenuPage()),
-              ],
+      bottomNavigationBar: RepaintBoundary(
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.red.shade900,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2),
+                blurRadius: 10,
+                offset: const Offset(0, -2),
+              ),
+            ],
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildBottomNavItem(Icons.home, "Home", 0, null),
+                  _buildBottomNavItem(Icons.water_drop, "Blood Request", 1, const EmergencyPage()),
+                  _buildBottomNavItem(Icons.chat, "AI Assistant", 2, const AIAssistantPage()),
+                  _buildBottomNavItem(Icons.menu, "Menu", 3, const MenuPage()),
+                ],
+              ),
             ),
           ),
         ),
@@ -143,20 +185,26 @@ class _LandingPageState extends State<LandingPage> {
   }
 
   Widget _savingLivesBadge() {
-    return Center(
-      child: Container(
-        margin: const EdgeInsets.only(top: 20, bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.red.shade100,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          "❤️ SAVING LIVES TOGETHER",
-          style: TextStyle(
-            color: Colors.red.shade900,
-            fontWeight: FontWeight.bold,
-            fontSize: 12,
+    return RepaintBoundary(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.only(top: 12, bottom: 2),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: Colors.red.shade100,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              child: Text(
+                "❤️ SAVING LIVES TOGETHER",
+                style: TextStyle(
+                  color: Color(0xFFB71C1C),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 10,
+                ),
+              ),
+            ),
           ),
         ),
       ),
@@ -164,99 +212,237 @@ class _LandingPageState extends State<LandingPage> {
   }
 
   Widget _findNearbyDonorCard(bool isDark, bool isSmall) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 0, right: 0, top: 0, bottom: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 20, right: 20, bottom: 20, top: 4),
-            child: Text(
-              "Find Nearby Donor",
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : Colors.black87,
-              ),
-            ),
-          ),
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 20),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: isDark ? Colors.grey.shade700 : Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(30),
-              border: Border.all(
-                color: Colors.red.shade900,
-                width: 2,
-              ),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.search, size: 20),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Text(
-                    "Search ...",
-                    style: TextStyle(fontSize: 14),
-                  ),
+    return RepaintBoundary(
+      child: Padding(
+        padding: const EdgeInsets.only(left: 0, right: 0, top: 0, bottom: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(left: 20, right: 20, bottom: 20, top: 4),
+              child: Text(
+                "Find Nearby Donor",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : Colors.black87,
                 ),
-                InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const FindDonorsPage()),
-                    );
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
+              ),
+            ),
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.grey.shade700 : Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(30),
+                border: Border.all(
+                  color: Colors.red.shade900,
+                  width: 2,
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.search, size: 20),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      "Search ...",
+                      style: TextStyle(fontSize: 14),
                     ),
-                    child: const Icon(Icons.arrow_forward, color: Colors.white, size: 16),
                   ),
-                ),
-              ],
+                  InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const FindDonorsPage()),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.arrow_forward, color: Colors.white, size: 16),
+                    ),
+                  ),
+                ],
+              ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _authCard(bool isDark, bool isSmall) {
+    return RepaintBoundary(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: isDark ? Colors.grey.shade800 : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.red.shade900,
+              width: 2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.red.withValues(alpha: 0.15),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-        ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Join Our Community",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "Sign up to donate blood or sign in to manage your donations",
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red.shade900,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const RegisterPage()),
+                        );
+                      },
+                      child: const Text(
+                        "Sign Up",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.red.shade900,
+                        side: BorderSide(
+                          color: Colors.red.shade900,
+                          width: 2,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const LoginPage()),
+                        );
+                      },
+                      child: const Text(
+                        "Sign In",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
   Widget _quickActionsCard(bool isSmall) {
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
+    return RepaintBoundary(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            Row(
               children: [
-                _actionCard(false, _buildBloodDropWithPlus(), const BloodDonationFormPage()),
-                const SizedBox(height: 8),
-                const Text(
-                  "Add Request",
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                Expanded(
+                  child: _quickActionColumn(
+                    _buildBloodDropWithPlus(),
+                    const BloodDonationFormPage(),
+                    "Add Request",
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _quickActionColumn(
+                    Icons.check_circle,
+                    const FindDonorsPage(),
+                    "Nearby Donor",
+                  ),
                 ),
               ],
             ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
+            const SizedBox(height: 16),
+            Row(
               children: [
-                _actionCard(false, Icons.check_circle, const FindDonorsPage()),
-                const SizedBox(height: 8),
-                const Text(
-                  "Nearby Donor",
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                Expanded(
+                  child: _quickActionColumn(
+                    Icons.emergency,
+                    const EmergencyPage(),
+                    "Emergency SOS",
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _quickActionColumn(
+                    Icons.list_alt,
+                    const MyBloodRequestsPage(),
+                    "My Requests",
+                  ),
                 ),
               ],
             ),
-          ),
-        ],
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _quickActionColumn(dynamic icon, Widget page, String label) {
+    return Column(
+      children: [
+        _actionCard(false, icon, page),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+        ),
+      ],
     );
   }
 
@@ -281,231 +467,223 @@ class _LandingPageState extends State<LandingPage> {
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: Colors.red.shade100,
+          color: const Color(0xFFFFCDD2),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.red.shade900, width: 4),
+          border: Border.all(color: const Color(0xFFB71C1C), width: 4),
         ),
-        child: icon is Widget ? icon : Icon(icon, size: 48, color: Colors.red.shade900),
+        child: icon is Widget ? icon : Icon(icon, size: 48, color: const Color(0xFFB71C1C)),
       ),
     );
   }
 
   Widget _imageCarousel(bool isDark) {
-    final List<Map<String, String>> carouselItems = [
-      {
-        'image': 'assets/images/pexels-anna-madera-737731338-18523230.jpg',
-        'title': 'Donate Blood',
-      },
-      {
-        'image': 'assets/images/Fewer than 50 people in the world have this___ (1).jfif',
-        'title': 'Save Lives',
-      },
-      {
-        'image': 'assets/images/Targeting the Regulars.jfif',
-        'title': 'Be a Hero',
-      },
-      {
-        'image': 'assets/images/pexels-charliehelenrobinson-4531307.jpg',
-        'title': 'Join Us',
-      },
+    // TEMPORARILY DISABLED FOR PERFORMANCE
+    // The carousel is causing frame skips and UI freezing
+    // Will be re-enabled after optimizing image sizes
+    return const SizedBox.shrink();
+
+    // Static const list to prevent rebuilding - using smaller images for performance
+    /*const carouselItems = [
+      {'image': 'assets/images/Fewer than 50 people in the world have this___ (1).jfif', 'title': 'Save Lives'},
+      {'image': 'assets/images/Targeting the Regulars.jfif', 'title': 'Be a Hero'},
     ];
 
-    return Padding(
-      padding: const EdgeInsets.only(top: 10, bottom: 20),
-      child: Column(
-        children: [
-          SizedBox(
-            height: 250,
-            child: PageView.builder(
-              controller: _pageController,
-              onPageChanged: (index) {
-                setState(() {
-                  _carouselIndex = index;
-                });
-              },
-              itemCount: carouselItems.length,
-              itemBuilder: (context, index) {
-                final item = carouselItems[index];
-                return Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 0),
-                  decoration: BoxDecoration(
-                    color: isDark ? Colors.grey.shade800 : Colors.pink.shade50,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.red.shade900, width: 2),
+    return RepaintBoundary(
+      child: Padding(
+        padding: const EdgeInsets.only(top: 10, bottom: 20),
+        child: Column(
+          children: [
+            SizedBox(
+              height: 250,
+              child: PageView.builder(
+                controller: _pageController,
+                onPageChanged: (index) {
+                  setState(() {
+                    _carouselIndex = index;
+                  });
+                },
+                itemCount: carouselItems.length,
+                itemBuilder: (context, index) {
+                  final item = carouselItems[index];
+                  return _carouselItem(item, isDark);
+                },
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(2, (index) {
+                return _carouselIndicator(index, isDark);
+              }),
+            ),
+          ],
+        ),
+      ),
+    );*/
+  }
+
+  // Carousel helper methods disabled - will be re-enabled after optimization
+  /*
+  Widget _carouselItem(Map<String, String> item, bool isDark) {
+    return Container(
+      margin: EdgeInsets.zero,
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF424242) : const Color(0xFFF48FB1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFB71C1C), width: 2),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: Image.asset(
+          item['image']!,
+          fit: BoxFit.cover,
+          gaplessPlayback: true, // Prevents flickering during image updates
+          errorBuilder: (context, error, stackTrace) => const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error, size: 64, color: Colors.grey),
+                SizedBox(height: 8),
+                Text(
+                  'Image not found',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey,
+                    fontWeight: FontWeight.w500,
                   ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(14),
-                    child: Image.asset(
-                      item['image']!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.error, size: 64, color: Colors.grey),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Image not found',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.grey.shade600,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Expected: ${item['image']!}',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey.shade500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                );
-              },
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(4, (index) {
-              return AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                width: _carouselIndex == index ? 24 : 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: _carouselIndex == index
-                      ? Colors.red.shade900
-                      : (isDark ? Colors.grey.shade600 : Colors.grey.shade400),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              );
-            }),
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _whyChooseUsSection(bool isDark) {
-    final List<Map<String, dynamic>> features = [
-      {'title': 'Emergency Blood Requests', 'icon': Icons.emergency, 'color': Colors.red, 'description': 'Urgent blood requests in real-time'},
-      {'title': 'Find Donors Nearby', 'icon': Icons.location_on, 'color': Colors.blue, 'description': 'Locate donors in your area'},
-      {'title': '24/7 AI Assistant', 'icon': Icons.smart_toy, 'color': Colors.purple, 'description': 'Get help anytime'},
-      {'title': 'Verified Donors', 'icon': Icons.verified, 'color': Colors.green, 'description': 'All donors are verified'},
-      {'title': 'Real-time Notifications', 'icon': Icons.notifications_active, 'color': Colors.orange, 'description': 'Instant alerts for requests'},
-      {'title': 'Simple & Fast Process', 'icon': Icons.flash_on, 'color': Colors.teal, 'description': 'Quick and easy donations'},
-    ];
+  Widget _carouselIndicator(int index, bool isDark) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      width: _carouselIndex == index ? 24 : 8,
+      height: 8,
+      decoration: BoxDecoration(
+        color: _carouselIndex == index
+            ? Colors.red.shade900
+            : (isDark ? Colors.grey.shade600 : Colors.grey.shade400),
+        borderRadius: BorderRadius.circular(4),
+      ),
+    );
+  }
+  */
 
-    return Padding(
-      padding: const EdgeInsets.all(20),
+  Widget _whyChooseUsSection(bool isDark) {
+    return RepaintBoundary(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(
+              "Why Choose Us?",
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.red.shade900,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              "Features that save lives",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: Colors.black,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 0.85,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+              ),
+              itemCount: _features.length,
+              itemBuilder: (context, index) {
+                return _featureCard(_features[index], isDark);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _featureCard(Map<String, dynamic> feature, bool isDark) {
+    final color = feature['color'] as Color;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.grey.shade800 : Colors.red.shade50,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: color.withValues(alpha: 0.6),
+          width: 3,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.2),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: color.withValues(alpha: 0.3),
+                width: 2,
+              ),
+            ),
+            child: Icon(
+              feature['icon'] as IconData,
+              color: color,
+              size: 36,
+            ),
+          ),
+          const SizedBox(height: 12),
           Text(
-            "Why Choose Us?",
-            style: TextStyle(
-              fontSize: 24,
+            feature['title'] as String,
+            style: const TextStyle(
+              fontSize: 14,
               fontWeight: FontWeight.bold,
-              color: Colors.red.shade900,
+              color: Colors.black87,
             ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 8),
-          const Text(
-            "Features that save lives",
+          const SizedBox(height: 6),
+          Text(
+            feature['description'] as String,
             style: TextStyle(
-              fontSize: 18,
+              fontSize: 11,
               fontWeight: FontWeight.w500,
-              color: Colors.black,
+              color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
             ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 20),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 0.85,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-            ),
-            itemCount: features.length,
-            itemBuilder: (context, index) {
-              final feature = features[index];
-              final color = feature['color'] as Color;
-              return Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.grey.shade800 : Colors.red.shade50,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: color.withValues(alpha: 0.6),
-                    width: 3,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: color.withValues(alpha: 0.2),
-                      blurRadius: 12,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.15),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: color.withValues(alpha: 0.3),
-                          width: 2,
-                        ),
-                      ),
-                      child: Icon(
-                        feature['icon'] as IconData,
-                        color: color,
-                        size: 36,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      feature['title'] as String,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      feature['description'] as String,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              );
-            },
           ),
         ],
       ),

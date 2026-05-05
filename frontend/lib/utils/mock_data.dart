@@ -537,6 +537,9 @@ class MockDonorData {
       'Sindh',
       'Khyber Pakhtunkhwa',
       'Balochistan',
+      'Islamabad Capital Territory',
+      'Gilgit-Baltistan',
+      'Azad Jammu and Kashmir',
     ];
   }
 
@@ -545,44 +548,49 @@ class MockDonorData {
     switch (province) {
       case 'Punjab':
         return [
-          'Lahore',
-          'Faisalabad',
-          'Rawalpindi',
-          'Multan',
-          'Gujranwala',
-          'Sialkot',
-          'Sargodha',
-          'Bahawalpur',
-          'Dera Ghazi Khan',
-          'Sheikhupura',
-          'Khushab',
+          'Ahmedpur East', 'Arifwala', 'Attock', 'Bahawalnagar', 'Bahawalpur',
+          'Bhakkar', 'Burewala', 'Chakwal', 'Chiniot', 'Dera Ghazi Khan',
+          'Faisalabad', 'Ferozewala', 'Gujranwala', 'Gujrat', 'Hafizabad',
+          'Jhang', 'Jhelum', 'Kasur', 'Khanewal', 'Khushab', 'Lahore',
+          'Layyah', 'Lodhran', 'Mandi Bahauddin', 'Mianwali', 'Multan',
+          'Muzaffargarh', 'Nankana Sahib', 'Narowal', 'Okara', 'Pakpattan',
+          'Rahim Yar Khan', 'Rajanpur', 'Rawalpindi', 'Sahiwal', 'Sargodha',
+          'Sheikhupura', 'Sialkot', 'Toba Tek Singh', 'Vehari', 'Wazirabad',
         ];
       case 'Sindh':
         return [
-          'Karachi',
-          'Hyderabad',
-          'Sukkur',
-          'Larkana',
-          'Mirpurkhas',
-          'Nawabshah',
+          'Badin', 'Bhan', 'Chachro', 'Dadu', 'Diplo', 'Ghotki', 'Hyderabad',
+          'Jacobabad', 'Jamshoro', 'Karachi', 'Kashmore', 'Kandhkot',
+          'Khairpur', 'Kotri', 'Larkana', 'Matiari', 'Mirpur Khas', 'Mithi',
+          'Nawabshah', 'Naushehro Feroze', 'Qambar', 'Sanghar', 'Shahdadkot',
+          'Shikarpur', 'Sukkur', 'Tando Adam', 'Tando Allahyar', 'Thatta', 'Umerkot',
         ];
       case 'Khyber Pakhtunkhwa':
         return [
-          'Peshawar',
-          'Mardan',
-          'Swat',
-          'Abbottabad',
-          'Mingora',
-          'Kohat',
-          'Dera Ismail Khan',
+          'Abbottabad', 'Bannu', 'Batagram', 'Buner', 'Charsadda', 'Chitral',
+          'Dera Ismail Khan', 'Dir', 'Haripur', 'Karak', 'Kohat', 'Kohistan',
+          'Lakki Marwat', 'Lower Dir', 'Malakand', 'Mansehra', 'Mardan',
+          'Nowshera', 'Peshawar', 'Shangla', 'Swabi', 'Swat', 'Tank', 'Upper Dir',
         ];
       case 'Balochistan':
         return [
-          'Quetta',
-          'Gwadar',
-          'Turbat',
-          'Sibi',
-          'Loralai',
+          'Awaran', 'Barkhan', 'Bolan', 'Chagai', 'Dera Bugti', 'Gwadar',
+          'Harnai', 'Jafarabad', 'Jhal Magsi', 'Kalat', 'Kech', 'Kharan',
+          'Khuzdar', 'Killa Abdullah', 'Killa Saifullah', 'Kohlu', 'Lasbela',
+          'Loralai', 'Mastung', 'Musakhel', 'Nasirabad', 'Nushki', 'Panjgur',
+          'Pishin', 'Quetta', 'Sherani', 'Sibi', 'Sohbatpur', 'Washuk', 'Zhob', 'Ziarat',
+        ];
+      case 'Islamabad Capital Territory':
+        return ['Islamabad'];
+      case 'Gilgit-Baltistan':
+        return [
+          'Astore', 'Ghizer', 'Ghanche', 'Gilgit', 'Hunza', 'Nagar',
+          'Skardu', 'Shigar', 'Kharmang', 'Roundu',
+        ];
+      case 'Azad Jammu and Kashmir':
+        return [
+          'Bagh', 'Bhimber', 'Hattian', 'Haveli', 'Kotli', 'Mirpur',
+          'Muzaffarabad', 'Neelum', 'Poonch', 'Rawalakot', 'Sudhanoti',
         ];
       default:
         return [];

@@ -13,6 +13,7 @@ from .serializers import (
     RegisterSerializer,
     LoginSerializer,
     UserSerializer,
+    UpdateProfileSerializer,
     DonorSerializer,
     DonorRegistrationSerializer,
     ForgotPasswordSerializer,
@@ -66,12 +67,12 @@ class RegisterView(generics.GenericAPIView):
     """
     User registration endpoint.
     Creates new user accounts with optional donor profile.
-    Implements rate limiting and comprehensive validation.
+    Rate limiting disabled for development.
     """
 
     serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
-    throttle_classes = [RegisterRateThrottle]
+    # throttle_classes = [RegisterRateThrottle]  # Disabled for development
 
     def post(self, request) -> Response:
         """
@@ -86,7 +87,7 @@ class RegisterView(generics.GenericAPIView):
             # Create email verification token (optional but recommended)
             from .models import EmailVerification
 
-            verification = EmailVerification.objects.create(user=user)
+            verification = EmailVerification.objects.create(user_id=user.id)
 
             # TODO: Send actual email here
             logger.info(
@@ -131,12 +132,12 @@ class LoginView(generics.GenericAPIView):
     """
     User login endpoint.
     Authenticates users and returns JWT tokens.
-    Implements rate limiting and security best practices.
+    Rate limiting disabled for development.
     """
 
     serializer_class = LoginSerializer
     permission_classes = [permissions.AllowAny]
-    throttle_classes = [LoginRateThrottle]
+    # throttle_classes = [LoginRateThrottle]  # Disabled for development
 
     def post(self, request) -> Response:
         """
@@ -202,8 +203,13 @@ class LoginView(generics.GenericAPIView):
 
 # PROFILE VIEW
 class ProfileView(generics.RetrieveUpdateAPIView):
-    serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_serializer_class(self):
+        """Use UpdateProfileSerializer for updates, UserSerializer for reads"""
+        if self.request.method in ['PUT', 'PATCH']:
+            return UpdateProfileSerializer
+        return UserSerializer
 
     def get_object(self):
         return self.request.user
@@ -239,7 +245,7 @@ class UpdateDonorProfileView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         try:
-            return self.request.user.donor_profile
+            return Donor.objects.get(user_id=self.request.user.id)
         except Donor.DoesNotExist:
             return Response(
                 {"error": "You are not registered as a donor"},
@@ -278,10 +284,10 @@ class SendVerificationEmailView(generics.GenericAPIView):
             from .models import EmailVerification
             import uuid
 
-            EmailVerification.objects.filter(user=user, is_used=False).delete()
+            EmailVerification.objects.filter(user_id=user.id, is_used=False).delete()
 
             # Create new verification token
-            verification = EmailVerification.objects.create(user=user)
+            verification = EmailVerification.objects.create(user_id=user.id)
 
             # TODO: Send actual email here
             # For now, return the token in response (for testing only)
@@ -333,8 +339,10 @@ class VerifyEmailView(generics.GenericAPIView):
                 )
 
             # Mark user as active and verification as used
-            verification.user.is_active = True
-            verification.user.save()
+            from .models import MyUser
+            user = MyUser.objects.get(id=verification.user_id)
+            user.is_active = True
+            user.save()
             verification.is_used = True
             verification.save()
 
@@ -380,10 +388,10 @@ class ForgotPasswordView(generics.GenericAPIView):
                 # Delete any existing unused reset tokens for this user
                 from .models import PasswordReset
 
-                PasswordReset.objects.filter(user=user, is_used=False).delete()
+                PasswordReset.objects.filter(user_id=user.id, is_used=False).delete()
 
                 # Create new reset token
-                reset = PasswordReset.objects.create(user=user)
+                reset = PasswordReset.objects.create(user_id=user.id)
 
                 # Log the token for development/testing
                 logger.info(
@@ -518,3 +526,5 @@ class ResetPasswordView(generics.GenericAPIView):
                 message="An unexpected error occurred. Please try again later.",
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+

@@ -10,17 +10,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name="myuser",
-            name="first_name",
-        ),
-        migrations.RemoveField(
-            model_name="myuser",
-            name="last_name",
-        ),
-        migrations.AddField(
-            model_name="myuser",
-            name="full_name",
-            field=models.CharField(default="", max_length=100),
-        ),
+        # full_name already exists in initial migration, no changes needed
     ]

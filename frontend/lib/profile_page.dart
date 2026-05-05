@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'login_page.dart';
+import 'landing_page.dart';
 import 'edit_profile_page.dart';
 import 'schedule_donation_page.dart';
+import 'services/auth_service.dart';
 
 class ProfilePage extends StatelessWidget {
   ProfilePage({super.key});
@@ -526,12 +527,21 @@ class ProfilePage extends StatelessWidget {
               child: const Text("Cancel"),
             ),
             TextButton(
-              onPressed: () {
+              onPressed: () async {
+                // Close dialog first
                 Navigator.pop(dialogContext);
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const LoginPage()),
-                );
+
+                // Perform logout
+                await AuthService.logout();
+
+                // Navigate to landing page and clear all navigation stack
+                if (context.mounted) {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (context) => const LandingPage()),
+                    (route) => false,
+                  );
+                }
               },
               style: TextButton.styleFrom(foregroundColor: Colors.red),
               child: const Text("Logout"),

@@ -13,58 +13,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.CreateModel(
-            name="PasswordReset",
-            fields=[
-                ("id", models.AutoField(primary_key=True, serialize=False)),
-                (
-                    "token",
-                    models.UUIDField(
-                        default=uuid.uuid4,
-                        editable=False,
-                        help_text="Unique token for password reset",
-                        unique=True,
-                        verbose_name="Reset Token",
-                    ),
-                ),
-                (
-                    "created_at",
-                    models.DateTimeField(
-                        auto_now_add=True,
-                        help_text="Token creation timestamp",
-                        verbose_name="Created At",
-                    ),
-                ),
-                (
-                    "is_used",
-                    models.BooleanField(
-                        default=False,
-                        help_text="Whether the token has been used",
-                        verbose_name="Used",
-                    ),
-                ),
-                (
-                    "user",
-                    models.ForeignKey(
-                        help_text="Reference to the user account",
-                        on_delete=django.db.models.deletion.CASCADE,
-                        related_name="password_resets",
-                        to=settings.AUTH_USER_MODEL,
-                        verbose_name="User",
-                    ),
-                ),
-            ],
-            options={
-                "verbose_name": "Password Reset",
-                "verbose_name_plural": "Password Resets",
-                "ordering": ["-created_at"],
-                "indexes": [
-                    models.Index(fields=["token"], name="accounts_pa_token_8f13bc_idx"),
-                    models.Index(
-                        fields=["user", "is_used"],
-                        name="accounts_pa_user_id_f0b131_idx",
-                    ),
-                ],
-            },
-        ),
+        # PasswordReset table already exists in initial migration
     ]
