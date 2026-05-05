@@ -20,8 +20,9 @@ class LandingPage extends StatefulWidget {
 
 class _LandingPageState extends State<LandingPage> {
   final ScrollController _scrollController = ScrollController();
-  final PageController _pageController = PageController();
-  int _carouselIndex = 0;
+  // PageController disabled - carousel temporarily removed for performance
+  // final PageController _pageController = PageController();
+  // int _carouselIndex = 0;
   bool _isLoggedIn = false;
 
   // Static const data to prevent rebuilding
@@ -57,7 +58,7 @@ class _LandingPageState extends State<LandingPage> {
   @override
   void dispose() {
     _scrollController.dispose();
-    _pageController.dispose();
+    // _pageController disposed when carousel was disabled
     super.dispose();
   }
 
@@ -476,12 +477,15 @@ class _LandingPageState extends State<LandingPage> {
   }
 
   Widget _imageCarousel(bool isDark) {
-    // Static const list to prevent rebuilding
-    const carouselItems = [
-      {'image': 'assets/images/pexels-anna-madera-737731338-18523230.jpg', 'title': 'Donate Blood'},
+    // TEMPORARILY DISABLED FOR PERFORMANCE
+    // The carousel is causing frame skips and UI freezing
+    // Will be re-enabled after optimizing image sizes
+    return const SizedBox.shrink();
+
+    // Static const list to prevent rebuilding - using smaller images for performance
+    /*const carouselItems = [
       {'image': 'assets/images/Fewer than 50 people in the world have this___ (1).jfif', 'title': 'Save Lives'},
       {'image': 'assets/images/Targeting the Regulars.jfif', 'title': 'Be a Hero'},
-      {'image': 'assets/images/pexels-charliehelenrobinson-4531307.jpg', 'title': 'Join Us'},
     ];
 
     return RepaintBoundary(
@@ -508,16 +512,18 @@ class _LandingPageState extends State<LandingPage> {
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(4, (index) {
+              children: List.generate(2, (index) {
                 return _carouselIndicator(index, isDark);
               }),
             ),
           ],
         ),
       ),
-    );
+    );*/
   }
 
+  // Carousel helper methods disabled - will be re-enabled after optimization
+  /*
   Widget _carouselItem(Map<String, String> item, bool isDark) {
     return Container(
       margin: EdgeInsets.zero,
@@ -568,6 +574,7 @@ class _LandingPageState extends State<LandingPage> {
       ),
     );
   }
+  */
 
   Widget _whyChooseUsSection(bool isDark) {
     return RepaintBoundary(
