@@ -10,12 +10,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterField(
-            model_name="myuser",
-            name="gender",
-            field=models.CharField(
-                choices=[("Male", "Male"), ("Female", "Female"), ("Other", "Other")],
-                max_length=6,
-            ),
-        ),
+        # gender field already configured correctly in initial migration
     ]

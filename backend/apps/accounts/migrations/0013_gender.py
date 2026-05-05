@@ -21,17 +21,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.CreateModel(
-            name="Gender",
-            fields=[
-                ("id", models.AutoField(primary_key=True, serialize=False)),
-                ("name", models.CharField(max_length=10, unique=True)),
-            ],
-            options={
-                "verbose_name": "Gender",
-                "verbose_name_plural": "Genders",
-                "ordering": ["name"],
-            },
-        ),
-        migrations.RunPython(create_genders, migrations.RunPython.noop),
+        # Gender choices already exist in MyUser model
     ]

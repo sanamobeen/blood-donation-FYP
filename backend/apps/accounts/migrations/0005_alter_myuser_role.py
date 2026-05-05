@@ -10,17 +10,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterField(
-            model_name="myuser",
-            name="role",
-            field=models.CharField(
-                choices=[
-                    ("patient", "Patient"),
-                    ("donor", "Donor"),
-                    ("admin", "Admin"),
-                ],
-                default="patient",
-                max_length=20,
-            ),
-        ),
+        # role field doesn't exist in current model
     ]

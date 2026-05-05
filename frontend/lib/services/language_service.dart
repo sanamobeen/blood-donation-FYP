@@ -120,6 +120,9 @@ class AppTranslations {
       'sindh': 'Sindh',
       'khyber_pakhtunkhwa': 'Khyber Pakhtunkhwa',
       'balochistan': 'Balochistan',
+      'islamabad_capital_territory': 'Islamabad Capital Territory',
+      'gilgit_baltistan': 'Gilgit-Baltistan',
+      'azad_jammu_and_kashmir': 'Azad Jammu and Kashmir',
 
       // App Info
       'app_version': 'Blood Bank App v1.0.0',
@@ -222,6 +225,9 @@ class AppTranslations {
       'sindh': 'سندھ',
       'khyber_pakhtunkhwa': 'خیبر پختونخوا',
       'balochistan': 'بلوچستان',
+      'islamabad_capital_territory': 'اسلامabad دارالحکومت',
+      'gilgit_baltistan': 'گلگت بلتستان',
+      'azad_jammu_and_kashmir': 'آزاد جموں و کشمیر',
 
       // App Info
       'app_version': 'blod بینک ایپ v1.0.0',

@@ -201,16 +201,29 @@ class _RegisterPageState extends State<RegisterPage> {
             (route) => false,
           );
         }
-      } else {
+      } else if (response.statusCode == 400) {
+        // Handle validation errors
         final errorData = jsonDecode(response.body);
         debugPrint('Error data: $errorData');
 
         if (mounted) {
           setState(() {
             _isRegistering = false;
+
+            // Extract field-specific errors
+            if (errorData.containsKey('errors')) {
+              final errors = errorData['errors'];
+              if (errors is Map) {
+                errors.forEach((field, errorMessages) {
+                  if (errorMessages is List && errorMessages.isNotEmpty) {
+                    _fieldErrors[field.toString()] = errorMessages[0].toString();
+                  }
+                });
+              }
+            }
           });
 
-          // Show simple error message
+          // Show appropriate error message
           String errorMessage = _selectedLanguage == 'ur'
               ? 'رجسٹریشن ناکام ہوئی'
               : 'Registration failed';
@@ -238,6 +251,23 @@ class _RegisterPageState extends State<RegisterPage> {
                 textColor: Colors.white,
                 onPressed: () {},
               ),
+            ),
+          );
+        }
+      } else {
+        // Handle other errors
+        if (mounted) {
+          setState(() {
+            _isRegistering = false;
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(_selectedLanguage == 'ur'
+                  ? 'سرور کی خرابی۔ براہ کرم بعد میں کوشش کریں'
+                  : 'Server error. Please try again later.'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 4),
             ),
           );
         }
@@ -698,7 +728,7 @@ class _RegisterPageState extends State<RegisterPage> {
           items: MockDonorData.getProvinces().map((province) {
             return DropdownMenuItem(
               value: province,
-              child: Text(_translate(province.toLowerCase())),
+              child: Text(province), // Display province name as-is
             );
           }).toList(),
           onChanged: (value) {
@@ -849,6 +879,9 @@ class _RegisterPageState extends State<RegisterPage> {
                 });
               },
             ),
+            hintText: _selectedLanguage == 'ur' ? 'کم از کم 8 حروف' : 'Min 8 characters',
+            helperText: _selectedLanguage == 'ur' ? 'بڑے حروف، چھوٹے حروف، اعداد اور خاص علامات کی ضرورت ہے' : 'Must contain uppercase, lowercase, number & special char',
+            helperStyle: TextStyle(fontSize: 11, color: Colors.grey.shade600),
             errorText: _getFieldError('password'),
             errorBorder: OutlineInputBorder(
               borderSide: BorderSide(color: _hasFieldError('password') ? Colors.red : Colors.grey.shade900, width: 2),
@@ -1003,7 +1036,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ),
               const SizedBox(height: 8),
-              _buildSummaryRow(_selectedLanguage == 'ur' ? 'صوبہ' : 'Province', _translate(_selectedProvince.toLowerCase())),
+              _buildSummaryRow(_selectedLanguage == 'ur' ? 'صوبہ' : 'Province', _selectedProvince),
               _buildSummaryRow(_selectedLanguage == 'ur' ? 'ضلع' : 'District', _selectedDistrict),
               _buildSummaryRow(_selectedLanguage == 'ur' ? 'مقامی سطح' : 'Local Level', _localLevelController.text),
               _buildSummaryRow('Email', _emailController.text),

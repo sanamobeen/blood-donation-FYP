@@ -10,9 +10,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name="bloodrequest",
-            name="case",
-            field=models.TextField(blank=True, null=True),
-        ),
+        # 'case' field already exists in initial migration
     ]
