@@ -5,7 +5,7 @@ from datetime import datetime, date
 from typing import Dict, Any
 from rest_framework import serializers
 from django.core.validators import ValidationError
-from .models import MyUser, Donor
+from .models import MyUser, Donor, GENDERS, PROVINCES, DISTRICTS, BLOOD_GROUPS
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.hashers import make_password
@@ -63,31 +63,161 @@ class UserSerializer(serializers.ModelSerializer):
             "full_name",
             "email",
             "phone",
+            "gender",
             "province",
             "district",
             "local_level",
-            "gender",
             "date_of_birth",
+            "blood_group",
             "created_at",
             "updated_at",
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
 
 
+# UPDATE PROFILE SERIALIZER
+class UpdateProfileSerializer(serializers.ModelSerializer):
+    """
+    Serializer for updating user profile information.
+    All fields are optional to allow partial updates.
+    """
+    gender = serializers.ChoiceField(
+        choices=GENDERS,
+        required=False,
+        allow_null=True,
+        help_text="User's gender"
+    )
+    province = serializers.ChoiceField(
+        choices=PROVINCES,
+        required=False,
+        allow_null=True,
+        help_text="User's province"
+    )
+    district = serializers.ChoiceField(
+        choices=DISTRICTS,
+        required=False,
+        allow_null=True,
+        help_text="User's district"
+    )
+    blood_group = serializers.ChoiceField(
+        choices=BLOOD_GROUPS,
+        required=False,
+        allow_null=True,
+        help_text="User's blood group"
+    )
+    phone = serializers.CharField(
+        required=False,
+        allow_null=True,
+        allow_blank=True,
+        help_text="Contact phone number"
+    )
+    local_level = serializers.CharField(
+        required=False,
+        allow_null=True,
+        allow_blank=True,
+        help_text="Specific area or locality"
+    )
+    date_of_birth = serializers.DateField(
+        required=False,
+        allow_null=True,
+        help_text="User's date of birth for age validation"
+    )
+
+    class Meta:
+        model = MyUser
+        fields = [
+            "full_name",
+            "phone",
+            "gender",
+            "province",
+            "district",
+            "local_level",
+            "date_of_birth",
+            "blood_group",
+        ]
+
+    def validate_phone(self, value):
+        """Validate phone number format if provided"""
+        if value:
+            phone = value.strip()
+            phone_cleaned = re.sub(r"[\s\-\(\)]", "", phone)
+            if not re.match(r"^\+?\d{6,15}$", phone_cleaned):
+                raise serializers.ValidationError(
+                    "Invalid phone number format. Use international format: +92XXXXXXXXXX"
+                )
+            return phone_cleaned
+        return value
+
+    def validate_date_of_birth(self, value):
+        """Validate date of birth if provided"""
+        if value and self.instance.blood_group:
+            today = date.today()
+            age = (
+                today.year
+                - value.year
+                - ((today.month, today.day) < (value.month, value.day))
+            )
+            if age < 18:
+                raise serializers.ValidationError(
+                    "Donors must be at least 18 years old for safety reasons"
+                )
+            if age > 65:
+                raise serializers.ValidationError(
+                    "Donors must be 65 years or younger for safety reasons"
+                )
+        return value
+
+
 # REGISTER SERIALIZER
 class RegisterSerializer(serializers.ModelSerializer):
-    # Frontend sends these fields directly as strings
-    blood_group = serializers.CharField(write_only=True, required=False)
-    gender = serializers.CharField(write_only=True, required=False)
-    province = serializers.CharField(write_only=True, required=False)
-    district = serializers.CharField(write_only=True, required=False)
-    local_level = serializers.CharField(write_only=True, required=False)
+    blood_group = serializers.ChoiceField(
+        choices=BLOOD_GROUPS,
+        write_only=True,
+        required=False,
+        help_text="User's blood group"
+    )
+    gender = serializers.ChoiceField(
+        choices=GENDERS,
+        write_only=True,
+        required=False,
+        help_text="User's gender"
+    )
+    province = serializers.ChoiceField(
+        choices=PROVINCES,
+        write_only=True,
+        required=False,
+        help_text="User's province"
+    )
+    district = serializers.ChoiceField(
+        choices=DISTRICTS,
+        write_only=True,
+        required=False,
+        help_text="User's district"
+    )
+    local_level = serializers.CharField(
+        write_only=True,
+        required=False,
+        allow_blank=True,
+        allow_null=True,
+        help_text="Specific area or locality"
+    )
+    date_of_birth = serializers.DateField(
+        write_only=True,
+        required=False,
+        allow_null=True,
+        help_text="User's date of birth for age validation"
+    )
     password = serializers.CharField(
         write_only=True,
         required=True,
         validators=[validate_password, validate_password_strength],
+        help_text="User's password (min 8 chars, must contain uppercase, lowercase, number, special char)"
     )
-    confirm_password = serializers.CharField(write_only=True, required=True)
+    confirm_password = serializers.CharField(
+        write_only=True,
+        required=True,
+        help_text="Confirm password"
+    )
 
     class Meta:
         model = MyUser
@@ -100,7 +230,7 @@ class RegisterSerializer(serializers.ModelSerializer):
             "district",
             "local_level",
             "date_of_birth",
-            "blood_group",  # Will be used to create donor profile
+            "blood_group",
             "password",
             "confirm_password",
         ]
@@ -138,7 +268,7 @@ class RegisterSerializer(serializers.ModelSerializer):
             attrs["email"] = email
 
         # Validate phone number format (international format support)
-        if "phone" in attrs:
+        if "phone" in attrs and attrs["phone"]:
             phone = attrs["phone"].strip()
             # Remove spaces, dashes, parentheses for validation
             phone_cleaned = re.sub(r"[\s\-\(\)]", "", phone)
@@ -164,7 +294,7 @@ class RegisterSerializer(serializers.ModelSerializer):
             )
 
             # Donors must be between 18 and 65 years old
-            if attrs.get("blood_group") or attrs.get("role") == "donor":
+            if attrs.get("blood_group"):
                 if age < 18:
                     raise serializers.ValidationError(
                         {
@@ -177,15 +307,6 @@ class RegisterSerializer(serializers.ModelSerializer):
                             "date_of_birth": "Donors must be 65 years or younger for safety reasons"
                         }
                     )
-
-        # Validate blood_group if provided
-        if "blood_group" in attrs and attrs["blood_group"]:
-            from .models import BLOOD_GROUPS
-            valid_blood_groups = [choice[0] for choice in BLOOD_GROUPS]
-            if attrs["blood_group"] not in valid_blood_groups:
-                raise serializers.ValidationError(
-                    {"blood_group": "Invalid blood group"}
-                )
 
         return attrs
 
@@ -202,10 +323,14 @@ class RegisterSerializer(serializers.ModelSerializer):
 
         # Extract password before creating user object
         password = validated_data.pop("password")
-        blood_group = validated_data.get("blood_group")
+        blood_group = validated_data.pop("blood_group", None)  # Extract blood_group
 
         try:
             with transaction.atomic():
+                # Add blood_group to user data if provided
+                if blood_group:
+                    validated_data["blood_group"] = blood_group
+
                 # Create user without password first (active by default, email verification optional)
                 user = MyUser(**validated_data)
                 user.set_password(password)  # Hash and set the password
@@ -281,34 +406,69 @@ class LoginSerializer(serializers.Serializer):
 
 # DONOR SERIALIZER
 class DonorSerializer(serializers.ModelSerializer):
-    # Simple serializer - user info is in MyUser table
+    """
+    Serializer for donor profile information.
+    Blood group is retrieved from the related MyUser model.
+    """
+    user_email = serializers.EmailField(source="user.email", read_only=True)
+    user_full_name = serializers.CharField(source="user.full_name", read_only=True)
     blood_group = serializers.CharField(source="user.blood_group", read_only=True)
+    gender = serializers.CharField(source="user.gender", read_only=True)
+    province = serializers.CharField(source="user.province", read_only=True)
+    district = serializers.CharField(source="user.district", read_only=True)
 
     class Meta:
         model = Donor
         fields = [
             "id",
             "user_id",
+            "user_email",
+            "user_full_name",
             "blood_group",
+            "gender",
+            "province",
+            "district",
             "is_available",
             "last_donation_date",
             "total_donations",
             "created_at",
         ]
-        read_only_fields = ["id", "created_at", "total_donations"]
+        read_only_fields = ["id", "created_at", "total_donations", "user_id"]
 
 
 # DONOR REGISTRATION SERIALIZER
 class DonorRegistrationSerializer(serializers.ModelSerializer):
+    """
+    Serializer for registering an existing user as a donor.
+    Creates a donor profile for the authenticated user.
+    """
+    blood_group = serializers.ChoiceField(
+        choices=BLOOD_GROUPS,
+        required=True,
+        help_text="Blood group is required to register as a donor"
+    )
+
     class Meta:
         model = Donor
-        fields = ["is_available"]
+        fields = ["blood_group", "is_available"]
 
     def create(self, validated_data):
         user = self.context["request"].user
         if Donor.objects.filter(user_id=user.id).exists():
             raise serializers.ValidationError("User is already registered as a donor")
+
+        # Extract blood_group and save it to user model
+        blood_group = validated_data.pop("blood_group", None)
+        is_available = validated_data.get("is_available", True)
+
+        # Update user with blood group
+        if blood_group:
+            user.blood_group = blood_group
+            user.save()
+
+        # Create donor profile
         validated_data["user_id"] = user.id
+        validated_data["is_available"] = is_available
         return super().create(validated_data)
 
 

@@ -10,28 +10,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveIndex(
-            model_name="myuser",
-            name="accounts_my_role_55d5e7_idx",
-        ),
-        migrations.RemoveField(
-            model_name="myuser",
-            name="role",
-        ),
-        migrations.AlterField(
-            model_name="myuser",
-            name="province",
-            field=models.CharField(
-                choices=[
-                    ("Punjab", "Punjab"),
-                    ("Sindh", "Sindh"),
-                    ("Khyber Pakhtunkhwa", "Khyber Pakhtunkhwa"),
-                    ("Balochistan", "Balochistan"),
-                ],
-                default="Punjab",
-                help_text="User's province",
-                max_length=100,
-                verbose_name="Province",
-            ),
-        ),
+        # Index and role field don't exist - province already configured correctly
     ]

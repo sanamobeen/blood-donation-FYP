@@ -756,9 +756,11 @@ THIS IS A REAL EMERGENCY. PLEASE CONTACT THE USER IMMEDIATELY.
   }
 
   Future<void> _stopSiren() async {
-    setState(() {
-      _isPlayingSiren = false;
-    });
+    if (mounted) {
+      setState(() {
+        _isPlayingSiren = false;
+      });
+    }
     await _audioPlayer.stop();
   }
 }

@@ -10,9 +10,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterField(
-            model_name="myuser",
-            name="city",
-            field=models.CharField(max_length=100),
-        ),
+        # city field doesn't exist - removed operation
     ]

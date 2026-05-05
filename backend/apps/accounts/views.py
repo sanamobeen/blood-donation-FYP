@@ -13,6 +13,7 @@ from .serializers import (
     RegisterSerializer,
     LoginSerializer,
     UserSerializer,
+    UpdateProfileSerializer,
     DonorSerializer,
     DonorRegistrationSerializer,
     ForgotPasswordSerializer,
@@ -202,8 +203,13 @@ class LoginView(generics.GenericAPIView):
 
 # PROFILE VIEW
 class ProfileView(generics.RetrieveUpdateAPIView):
-    serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_serializer_class(self):
+        """Use UpdateProfileSerializer for updates, UserSerializer for reads"""
+        if self.request.method in ['PUT', 'PATCH']:
+            return UpdateProfileSerializer
+        return UserSerializer
 
     def get_object(self):
         return self.request.user

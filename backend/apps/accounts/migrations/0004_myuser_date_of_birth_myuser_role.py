@@ -10,14 +10,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name="myuser",
-            name="date_of_birth",
-            field=models.DateField(blank=True, null=True),
-        ),
-        migrations.AddField(
-            model_name="myuser",
-            name="role",
-            field=models.CharField(default="user", max_length=20),
-        ),
+        # date_of_birth already exists in initial migration
+        # role field doesn't exist in current model
     ]

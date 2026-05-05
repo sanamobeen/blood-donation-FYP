@@ -10,16 +10,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.CreateModel(
-            name="BloodGroup",
-            fields=[
-                ("id", models.AutoField(primary_key=True, serialize=False)),
-                ("name", models.CharField(max_length=3, unique=True)),
-            ],
-            options={
-                "verbose_name": "Blood Group",
-                "verbose_name_plural": "Blood Groups",
-                "ordering": ["name"],
-            },
-        ),
+        # Blood group choices already exist in MyUser model
     ]

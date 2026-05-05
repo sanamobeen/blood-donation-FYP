@@ -25,5 +25,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(create_blood_groups, migrations.RunPython.noop),
+        # Tables and fields already exist in initial migration
     ]

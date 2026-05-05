@@ -113,5 +113,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(convert_user_fields_to_foreignkeys, reverse_conversion),
+        # Tables and fields already exist in initial migration
     ]

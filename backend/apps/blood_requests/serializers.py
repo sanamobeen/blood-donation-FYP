@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from datetime import datetime, time, date
-from .models import BloodRequest
+from .models import BloodRequest, BLOOD_GROUP_CHOICES, GENDER_CHOICES, PROVINCE_CHOICES
 
+# For frontend compatibility - keep string choices for reference
 BLOOD_GROUPS = [
     ("A+", "A+"),
     ("A-", "A-"),
@@ -41,7 +42,7 @@ class BloodRequestSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "status", "created_at", "updated_at"]
+        read_only_fields = ["id", "user_id", "status", "created_at", "updated_at"]
         extra_kwargs = {
             "patient_name": {"required": True, "allow_blank": False},
             "emergency_contact": {"required": True, "allow_blank": False},
