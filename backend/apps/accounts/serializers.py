@@ -539,7 +539,7 @@ class ResetPasswordSerializer(serializers.Serializer):
         from .models import PasswordReset
 
         try:
-            reset = PasswordReset.objects.get(token=attrs["token"], user=user)
+            reset = PasswordReset.objects.get(token=attrs["token"], user_id=user.id)
             if not reset.is_valid():
                 raise serializers.ValidationError(
                     {"token": "Token has expired or already used. Please request a new one."}
