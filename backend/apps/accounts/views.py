@@ -374,6 +374,7 @@ class ForgotPasswordView(generics.GenericAPIView):
         """
         Handle forgot password POST requests.
         Creates password reset token and sends email.
+        Only works for emails that exist in the system.
         """
         try:
             serializer = self.get_serializer(data=request.data)
@@ -381,29 +382,28 @@ class ForgotPasswordView(generics.GenericAPIView):
 
             email = serializer.validated_data["email"]
 
-            # Check if user exists (for security, we always return success)
+            # Get user (serializer already validated email exists)
+            user = MyUser.objects.get(email=email)
+
+            # Delete any existing unused reset tokens for this user
+            from .models import PasswordReset
+
+            PasswordReset.objects.filter(user_id=user.id, is_used=False).delete()
+
+            # Create new reset token
+            reset = PasswordReset.objects.create(user_id=user.id)
+
+            # Log the token for development/testing
+            logger.info(
+                f"Password reset requested for {email}: Token = {reset.token}"
+            )
+
+            # Send actual email
             try:
-                user = MyUser.objects.get(email=email)
+                reset_link = f"{settings.FRONTEND_URL}/reset-password?email={email}&token={reset.token}"
 
-                # Delete any existing unused reset tokens for this user
-                from .models import PasswordReset
-
-                PasswordReset.objects.filter(user_id=user.id, is_used=False).delete()
-
-                # Create new reset token
-                reset = PasswordReset.objects.create(user_id=user.id)
-
-                # Log the token for development/testing
-                logger.info(
-                    f"Password reset requested for {email}: Token = {reset.token}"
-                )
-
-                # Send actual email
-                try:
-                    reset_link = f"{settings.FRONTEND_URL}/reset-password?email={email}&token={reset.token}"
-
-                    subject = "Password Reset Request - Blood Donation System"
-                    message = f"""
+                subject = "Password Reset Request - Blood Donation System"
+                message = f"""
 Hello {user.full_name or 'User'},
 
 You recently requested to reset your password for your Blood Donation account.
@@ -419,37 +419,32 @@ Best regards,
 Blood Donation Team
 """
 
-                    send_mail(
-                        subject=subject,
-                        message=message,
-                        from_email=settings.DEFAULT_FROM_EMAIL,
-                        recipient_list=[email],
-                        fail_silently=False,
-                    )
-
-                    logger.info(f"Password reset email sent successfully to {email}")
-
-                except Exception as email_error:
-                    logger.error(f"Failed to send password reset email: {str(email_error)}")
-                    # Continue anyway - token is created and can be used manually
-
-                return create_api_response(
-                    message="Password reset link has been sent to your email",
-                    data={
-                        "email": email,
-                        "token": str(reset.token),  # Include token for testing (remove in production)
-                    },
-                    status_code=status.HTTP_200_OK,
+                send_mail(
+                    subject=subject,
+                    message=message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[email],
+                    fail_silently=False,
                 )
 
-            except MyUser.DoesNotExist:
-                # For security, don't reveal whether email exists
-                # Still return success message
-                logger.warning(f"Password reset requested for non-existent email: {email}")
-                return create_api_response(
-                    message="If an account exists with this email, a password reset link has been sent",
-                    status_code=status.HTTP_200_OK,
-                )
+                logger.info(f"Password reset email sent successfully to {email}")
+
+            except Exception as email_error:
+                logger.error(f"Failed to send password reset email: {str(email_error)}")
+                # Continue anyway - token is created and can be used manually
+
+            # Build response data
+            response_data = {"email": email}
+
+            # Include token only in development mode for testing
+            if settings.DEBUG:
+                response_data["token"] = str(reset.token)
+
+            return create_api_response(
+                message="Password reset link has been sent to your email",
+                data=response_data,
+                status_code=status.HTTP_200_OK,
+            )
 
         except serializers.ValidationError as e:
             logger.warning(f"Forgot password validation failed: {e.detail}")
