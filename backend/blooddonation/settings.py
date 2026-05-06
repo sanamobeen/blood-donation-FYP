@@ -15,12 +15,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "change-this-in-production-use-environment-variable")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get("DEBUG", "True") == "True"
-
-ALLOWED_HOSTS = os.environ.get(
-    "ALLOWED_HOSTS",
-    "127.0.0.1,localhost,10.0.2.2,192.168.100.252,192.168.56.1,*"
-).split(",")
+DEBUG = True
+# DEBUG = False  # Production mode
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "127.0.0.1,localhost,10.0.2.2,192.168.100.252,192.168.56.1,*").split(",")
 
 # Authentication backends
 AUTHENTICATION_BACKENDS = [
@@ -87,7 +84,7 @@ WSGI_APPLICATION = "blooddonation.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
-        "NAME": "blood_donor_db",   # 👈 your DB name
+        "NAME": "blood_donor_db",
         "USER": "root",
         "PASSWORD": "password",
         "HOST": "localhost",
@@ -123,6 +120,9 @@ LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
+
+# URL configuration
+APPEND_SLASH = True  # Ensure consistent URL handling
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = "static/"
@@ -188,7 +188,7 @@ else:
 
 # Security settings (enforce in production)
 if not DEBUG:
-    SECURE_SSL_REDIRECT = True
+    # SECURE_SSL_REDIRECT = True  # Disabled for localhost development
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True
@@ -247,9 +247,9 @@ EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
-EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
-DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "")
+EMAIL_HOST_USER = "sanamobin7@gmail.com"
+EMAIL_HOST_PASSWORD = "rhqt exga mhau oktf"
+DEFAULT_FROM_EMAIL = "sanamobin7@gmail.com"
 
 # Option 2: Show emails in console (for testing - uncomment below)
 # EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
@@ -257,8 +257,9 @@ DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "")
 EMAIL_SUBJECT_PREFIX = "[Blood Donation]"
 
 # Frontend URL for password reset link
-# For testing with Flutter, this would be your app's deep link or web URL
-FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
+# Production: Use custom URL scheme for deep linking
+# Format: yourapp://reset-password?email=xxx&token=xxx
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "blooddonation://")
 
 # Create logs directory if it doesn't exist
 (BASE_DIR / "logs").mkdir(exist_ok=True)

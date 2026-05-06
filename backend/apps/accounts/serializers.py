@@ -483,13 +483,14 @@ class ForgotPasswordSerializer(serializers.Serializer):
     def validate_email(self, value):
         """
         Validate that email exists in the system.
-        Returns generic error for security (don't reveal if email exists).
+        Only allow password reset for registered emails.
         """
         email = value.strip().lower()
         if not MyUser.objects.filter(email=email).exists():
-            # For security, don't reveal whether email exists
-            # But log it for debugging
             logger.warning(f"Password reset requested for non-existent email: {email}")
+            raise serializers.ValidationError(
+                "No account found with this email address. Please check your email or register a new account."
+            )
         return email
 
 

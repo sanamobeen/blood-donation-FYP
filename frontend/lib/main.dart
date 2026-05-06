@@ -4,6 +4,7 @@ import 'splash_screen.dart';
 import 'menu_page.dart';
 import 'login_page.dart';
 import 'register_page.dart';
+import 'reset_password_page.dart';
 
 void main() {
   runApp(const BloodDonationApp());
@@ -38,6 +39,41 @@ class BloodDonationApp extends StatelessWidget {
           ),
           themeMode: mode,
           home: const SplashScreen(),
+          onGenerateRoute: (settings) {
+            // Handle deep linking for password reset
+            // Supports: blooddonation://reset-password?email=xxx&token=xxx
+            if (settings.name?.contains('reset-password') == true) {
+              // Extract query parameters from settings.name
+              final uri = Uri.parse(settings.name!);
+              final email = uri.queryParameters['email'] ?? '';
+              final token = uri.queryParameters['token'];
+
+              if (email.isNotEmpty && token != null) {
+                return MaterialPageRoute(
+                  builder: (context) => ResetPasswordPage(
+                    email: email,
+                    token: token,
+                  ),
+                );
+              }
+            }
+
+            // Default routes
+            return MaterialPageRoute(
+              builder: (context) {
+                switch (settings.name) {
+                  case '/menu':
+                    return const MenuPage();
+                  case '/login':
+                    return const LoginPage();
+                  case '/register':
+                    return const RegisterPage();
+                  default:
+                    return const SplashScreen();
+                }
+              },
+            );
+          },
           routes: {
             '/menu': (context) => const MenuPage(),
             '/login': (context) => const LoginPage(),

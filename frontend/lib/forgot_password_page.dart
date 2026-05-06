@@ -17,6 +17,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   bool _isSending = false;
   final String _selectedLanguage = 'en';
 
+  // Production mode - set to false for production
+  static const bool _isDevelopmentMode = true;
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -48,20 +51,120 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           _isSending = false;
         });
 
-        // Parse response to get token
+        // Parse response
         final responseData = jsonDecode(response.body);
-        final String? token = responseData['data']?['token'];
 
-        // Navigate directly to reset password page without showing success message
-        if (mounted) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (context) => ResetPasswordPage(
-                email: _emailController.text.trim(),
-                token: token,
+        // Check if request was successful
+        if (responseData['success'] == true) {
+          if (mounted) {
+            if (_isDevelopmentMode) {
+              // Development mode: Extract token and show testing options
+              final String? token = responseData['data']?['token'];
+
+              // Development mode: Show dialog with testing options
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => AlertDialog(
+                  title: Text(
+                    _selectedLanguage == 'ur' ? 'ای میل بھیج دیا گیا' : 'Email Sent',
+                  ),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _selectedLanguage == 'ur'
+                            ? 'پاسورڈ ری سیٹ لنک آپ کے ای میل پر بھیج دیا گیا ہے۔'
+                            : 'Password reset link has been sent to your email.',
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        _selectedLanguage == 'ur'
+                            ? 'ڈویلپمنٹ موڈ:'
+                            : 'Development Mode:',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _selectedLanguage == 'ur'
+                            ? 'ٹیسٹ کرنے کے لیے نیچے بٹن دبائیں'
+                            : 'Click "Test Now" to test the reset flow',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        _emailController.clear();
+                      },
+                      child: Text(_selectedLanguage == 'ur' ? 'بند کریں' : 'Close'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        Navigator.of(context).pushReplacement(
+                          MaterialPageRoute(
+                            builder: (context) => ResetPasswordPage(
+                              email: _emailController.text.trim(),
+                              token: token,
+                            ),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red.shade900,
+                      ),
+                      child: Text(_selectedLanguage == 'ur' ? 'ٹیسٹ اب کریں' : 'Test Now'),
+                    ),
+                  ],
+                ),
+              );
+            } else {
+              // Production mode: Clear email and show simple success message
+              _emailController.clear();
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    _selectedLanguage == 'ur'
+                        ? 'پاسورڈ ری سیٹ لنک آپ کے ای میل پر بھیج دیا گیا ہے۔ براہ کرم اپنے ای میل کو چیک کریں'
+                        : 'Password reset link has been sent to your email. Please check your email to reset your password.',
+                  ),
+                  backgroundColor: Colors.green,
+                  duration: const Duration(seconds: 5),
+                ),
+              );
+            }
+          }
+        } else {
+          // Email doesn't exist or other error - show error message
+          String errorMessage = _selectedLanguage == 'ur'
+              ? 'کوئی مسئلہ پیش آگیا'
+              : 'An error occurred';
+
+          // Extract error message from response
+          if (responseData['errors'] != null) {
+            if (responseData['errors']['email'] != null) {
+              errorMessage = responseData['errors']['email'][0];
+            } else if (responseData['message'] != null) {
+              errorMessage = responseData['message'];
+            }
+          } else if (responseData['message'] != null) {
+            errorMessage = responseData['message'];
+          }
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(errorMessage),
+                backgroundColor: Colors.red,
+                duration: const Duration(seconds: 4),
               ),
-            ),
-          );
+            );
+          }
         }
       } catch (e) {
         setState(() {
