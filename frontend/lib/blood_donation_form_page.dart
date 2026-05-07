@@ -27,13 +27,13 @@ class _BloodDonationFormPageState extends State<BloodDonationFormPage> {
   final _weightController = TextEditingController();
   final _heightController = TextEditingController();
 
-  // Selection State Variables (IDs for API)
-  int? _selectedGenderId;
-  int? _selectedBloodGroupId;
+  // Selection State Variables (String IDs for API)
+  String? _selectedGender;
+  String? _selectedBloodGroup;
   DateTime? _lastDonationDate;
   TimeOfDay? _selectedTime;
-  int? _selectedProvinceId;
-  int? _selectedDistrictId;
+  String? _selectedProvince;
+  String? _selectedDistrict;
 
   // API Data Lists
   List<Province> _provinces = [];
@@ -61,6 +61,7 @@ class _BloodDonationFormPageState extends State<BloodDonationFormPage> {
     try {
       // Load provinces
       final provincesResult = await BloodRequestService.getProvinces();
+      debugPrint('Provinces result: ${provincesResult.success}, count: ${provincesResult.provinces?.length}');
       if (provincesResult.success && provincesResult.provinces != null) {
         // Sort provinces in the desired order: Punjab, Sindh, KPK, Balochistan
         final provinceOrder = ['Punjab', 'Sindh', 'Khyber Pakhtunkhwa', 'Balochistan'];
@@ -76,26 +77,33 @@ class _BloodDonationFormPageState extends State<BloodDonationFormPage> {
         setState(() {
           _provinces = sortedProvinces;
         });
+      } else {
+        debugPrint('Failed to load provinces: ${provincesResult.errorMessage}');
       }
 
       // Load blood groups
       final bloodGroupsResult = await BloodRequestService.getBloodGroups();
+      debugPrint('Blood groups result: ${bloodGroupsResult.success}, count: ${bloodGroupsResult.bloodGroups?.length}');
       if (bloodGroupsResult.success && bloodGroupsResult.bloodGroups != null) {
         setState(() {
           _bloodGroups = bloodGroupsResult.bloodGroups!;
         });
+      } else {
+        debugPrint('Failed to load blood groups: ${bloodGroupsResult.errorMessage}');
       }
 
       // Load genders
       final gendersResult = await BloodRequestService.getGenders();
+      debugPrint('Genders result: ${gendersResult.success}, count: ${gendersResult.genders?.length}');
       if (gendersResult.success && gendersResult.genders != null) {
         setState(() {
           _genders = gendersResult.genders!;
         });
+      } else {
+        debugPrint('Failed to load genders: ${gendersResult.errorMessage}');
       }
     } catch (e) {
-      // ignore: avoid_print
-      print('Error loading initial data: $e');
+      debugPrint('Error loading initial data: $e');
     } finally {
       setState(() {
         _isInitialLoading = false;
@@ -103,12 +111,26 @@ class _BloodDonationFormPageState extends State<BloodDonationFormPage> {
     }
   }
 
-  Future<void> _loadDistricts(int provinceId) async {
-    final result = await BloodRequestService.getDistricts(provinceId);
+  Future<void> _loadDistricts([String? provinceName]) async {
+    debugPrint('Loading districts for province: $provinceName');
+    final result = await BloodRequestService.getDistricts(provinceName);
+    debugPrint('Districts result: ${result.success}, count: ${result.districts?.length}');
     if (result.success && result.districts != null) {
       setState(() {
         _districts = result.districts!;
       });
+      debugPrint('Loaded ${_districts.length} districts');
+    } else {
+      debugPrint('Failed to load districts: ${result.errorMessage}');
+      // Show error to user
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load districts: ${result.errorMessage}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -234,18 +256,9 @@ class _BloodDonationFormPageState extends State<BloodDonationFormPage> {
               const SizedBox(height: 12),
               _buildTextField(
                 isDark,
-                "Local Level",
+                "Local Level (Optional)",
                 Icons.apartment,
                 _localLevelController,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return "Please enter local level";
-                  }
-                  if (value.length < 2) {
-                    return "Local level must be at least 2 characters";
-                  }
-                  return null;
-                },
               ),
               const SizedBox(height: 24),
 
@@ -557,7 +570,7 @@ class _BloodDonationFormPageState extends State<BloodDonationFormPage> {
       child: ListTile(
         title: Text(
           selectedTime != null
-              ? '${selectedTime.hour}:${selectedTime.minute.toString().padLeft(2, '0')} ${selectedTime.period == DayPeriod.am ? 'AM' : 'PM'}'
+              ? '${(selectedTime.hour == 0 ? 12 : (selectedTime.hour > 12 ? selectedTime.hour - 12 : selectedTime.hour)).toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')} ${selectedTime.period == DayPeriod.am ? 'AM' : 'PM'}'
               : label,
           style: TextStyle(
             color: isDark ? Colors.white : Colors.black87,
@@ -571,12 +584,27 @@ class _BloodDonationFormPageState extends State<BloodDonationFormPage> {
           size: 24,
         ),
         onTap: () async {
-          // Check if selected date is today
+          // Check if selected date is today, future, or past
           final now = DateTime.now();
-          final isToday = _lastDonationDate != null &&
-              _lastDonationDate!.year == now.year &&
-              _lastDonationDate!.month == now.month &&
-              _lastDonationDate!.day == now.day;
+          final selectedDate = _lastDonationDate;
+
+          if (selectedDate == null) {
+            // Show error - date must be selected first
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Please select required date first'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+            return;
+          }
+
+          final isToday = selectedDate.year == now.year &&
+              selectedDate.month == now.month &&
+              selectedDate.day == now.day;
+
+          final isFutureDate = selectedDate.isAfter(DateTime(now.year, now.month, now.day));
 
           final TimeOfDay? picked = await showTimePicker(
             context: context,
@@ -590,33 +618,48 @@ class _BloodDonationFormPageState extends State<BloodDonationFormPage> {
           );
 
           if (picked != null) {
-            // If today's date is selected, validate that time is not in the past
+            // Validate time based on selected date
             if (isToday) {
-              final now = DateTime.now();
-              final nowTime = TimeOfDay.now();
+              // For today: time must be current or future (not past)
+              final nowDateTime = DateTime.now();
 
-              // Create proper DateTime objects for comparison
-              final currentDateTime = DateTime(now.year, now.month, now.day, nowTime.hour, nowTime.minute);
+              // Create DateTime object for selected time
               final selectedDateTime = DateTime(now.year, now.month, now.day, picked.hour, picked.minute);
 
-              // Calculate the difference in minutes
-              final difference = selectedDateTime.difference(currentDateTime).inMinutes;
+              // Calculate difference in seconds for more accurate comparison
+              final difference = selectedDateTime.difference(nowDateTime).inSeconds;
 
-              // If selected time is more than 5 minutes in the past, block it
-              // Allow small buffer for time it takes to select
-              if (difference < -5) {
-                // Show error - past time not allowed
+              // Allow only current time and future times (no past times, even 1 minute ago)
+              // Use -60 seconds buffer to account for time it takes to select
+              if (difference < -60) {
+                // Show error - past time not allowed for today
                 if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Cannot select past time for today\'s date'),
+                    content: Text('Cannot select past time. Please choose current or future time.'),
                     backgroundColor: Colors.red,
+                    duration: Duration(seconds: 3),
                   ),
                 );
                 return;
               }
+
+              // Current time or near-future time is acceptable
+              onTimeSelected(picked);
+            } else if (isFutureDate) {
+              // For future dates: any time is acceptable
+              onTimeSelected(picked);
+            } else {
+              // Past date (shouldn't happen due to date validation, but handle it)
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Cannot select time for past dates'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+              return;
             }
-            onTimeSelected(picked);
           }
         },
       ),
@@ -624,8 +667,65 @@ class _BloodDonationFormPageState extends State<BloodDonationFormPage> {
   }
 
   void _submitForm() async {
-    // Step 1: Form Validation
+    // Step 1: Comprehensive Form Validation
+    List<String> errors = [];
+
+    // Validate text fields using form key
     if (!_formKey.currentState!.validate()) {
+      // Form validation failed - text fields have errors
+      return;
+    }
+
+    // Validate dropdowns
+    if (_selectedBloodGroup == null) {
+      errors.add("• Please select your blood group");
+    }
+    if (_selectedGender == null) {
+      errors.add("• Please select your gender");
+    }
+    if (_selectedProvince == null) {
+      errors.add("• Please select your province");
+    }
+    if (_selectedDistrict == null) {
+      errors.add("• Please select your district");
+    }
+
+    // Validate date and time
+    if (_lastDonationDate == null) {
+      errors.add("• Please select required date");
+    }
+    if (_selectedTime == null) {
+      errors.add("• Please select required time");
+    }
+
+    // If there are any validation errors, show them all at once
+    if (errors.isNotEmpty) {
+      setState(() => _isLoading = false);
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Please complete the following required fields:",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white),
+              ),
+              const SizedBox(height: 8),
+              ...errors.map((error) => Text(
+                error,
+                style: const TextStyle(fontSize: 14, color: Colors.white),
+              )),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+        ),
+      );
       return;
     }
 
@@ -640,16 +740,14 @@ class _BloodDonationFormPageState extends State<BloodDonationFormPage> {
       final formattedTime = '${_selectedTime!.hour}:${_selectedTime!.minute.toString().padLeft(2, '0')}';
 
       // Submit to Backend
-      // Note: Using local level ID = 1 as default since local level is now a text field
-      // The backend requires an integer ID for local level
       final result = await BloodRequestService.createBloodRequest(
         patientName: _nameController.text.trim(),
         emergencyContact: _contactPersonController.text.trim(),
-        bloodGroup: _selectedBloodGroupId!,
-        gender: _selectedGenderId!,
-        province: _selectedProvinceId!,
-        district: _selectedDistrictId!,
-        localLevel: 1, // Default ID - local level is now a text field for user reference
+        bloodGroup: _selectedBloodGroup!,
+        gender: _selectedGender!,
+        province: _selectedProvince!,
+        district: _selectedDistrict!,
+        localLevel: _localLevelController.text.trim(), // Now using string from text field
         unitsRequired: int.parse(_weightController.text.trim()),
         requiredDate: formattedDate,
         requiredTime: formattedTime,
@@ -840,31 +938,34 @@ class _BloodDonationFormPageState extends State<BloodDonationFormPage> {
           color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
         ),
       ),
-      child: DropdownButtonFormField<int>(
-        initialValue: _selectedBloodGroupId,
-        decoration: InputDecoration(
-          labelText: "Blood Group",
-          labelStyle: TextStyle(
-            color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            value: _selectedBloodGroup,
+            isExpanded: true,
+            hint: Text(
+              "Blood Group",
+              style: TextStyle(
+                color: isDark ? Colors.grey.shade500 : Colors.grey.shade400,
+                fontSize: 16,
+              ),
+            ),
+            icon: Icon(Icons.arrow_drop_down, color: Colors.red.shade900),
+            dropdownColor: isDark ? Colors.grey.shade800 : Colors.white,
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.black87,
+              fontSize: 16,
+            ),
+            items: _bloodGroups.map((bg) {
+              return DropdownMenuItem<String>(
+                value: bg.id,
+                child: Text(bg.name),
+              );
+            }).toList(),
+            onChanged: (value) => setState(() => _selectedBloodGroup = value),
           ),
-          prefixIcon: Icon(Icons.bloodtype, color: Colors.red.shade900),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.all(16),
         ),
-        dropdownColor: isDark ? Colors.grey.shade800 : Colors.white,
-        style: TextStyle(
-          color: isDark ? Colors.white : Colors.black87,
-          fontSize: 16,
-        ),
-        items: _bloodGroups.map((bg) {
-          return DropdownMenuItem<int>(
-            value: bg.id,
-            child: Text(bg.name),
-          );
-        }).toList(),
-        onChanged: (value) => setState(() => _selectedBloodGroupId = value),
-        validator: (value) =>
-            value == null ? "Please select your blood group" : null,
       ),
     );
   }
@@ -878,31 +979,34 @@ class _BloodDonationFormPageState extends State<BloodDonationFormPage> {
           color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
         ),
       ),
-      child: DropdownButtonFormField<int>(
-        initialValue: _selectedGenderId,
-        decoration: InputDecoration(
-          labelText: "Gender",
-          labelStyle: TextStyle(
-            color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            value: _selectedGender,
+            isExpanded: true,
+            hint: Text(
+              "Gender",
+              style: TextStyle(
+                color: isDark ? Colors.grey.shade500 : Colors.grey.shade400,
+                fontSize: 16,
+              ),
+            ),
+            icon: Icon(Icons.arrow_drop_down, color: Colors.red.shade900),
+            dropdownColor: isDark ? Colors.grey.shade800 : Colors.white,
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.black87,
+              fontSize: 16,
+            ),
+            items: _genders.map((g) {
+              return DropdownMenuItem<String>(
+                value: g.id,
+                child: Text(g.name),
+              );
+            }).toList(),
+            onChanged: (value) => setState(() => _selectedGender = value),
           ),
-          prefixIcon: Icon(Icons.wc, color: Colors.red.shade900),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.all(16),
         ),
-        dropdownColor: isDark ? Colors.grey.shade800 : Colors.white,
-        style: TextStyle(
-          color: isDark ? Colors.white : Colors.black87,
-          fontSize: 16,
-        ),
-        items: _genders.map((g) {
-          return DropdownMenuItem<int>(
-            value: g.id,
-            child: Text(g.name),
-          );
-        }).toList(),
-        onChanged: (value) => setState(() => _selectedGenderId = value),
-        validator: (value) =>
-            value == null ? "Please select your gender" : null,
       ),
     );
   }
@@ -916,40 +1020,44 @@ class _BloodDonationFormPageState extends State<BloodDonationFormPage> {
           color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
         ),
       ),
-      child: DropdownButtonFormField<int>(
-        initialValue: _selectedProvinceId,
-        decoration: InputDecoration(
-          labelText: "Select Province",
-          labelStyle: TextStyle(
-            color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            value: _selectedProvince,
+            isExpanded: true,
+            hint: Text(
+              "Select Province",
+              style: TextStyle(
+                color: isDark ? Colors.grey.shade500 : Colors.grey.shade400,
+                fontSize: 16,
+              ),
+            ),
+            icon: Icon(Icons.arrow_drop_down, color: Colors.red.shade900),
+            dropdownColor: isDark ? Colors.grey.shade800 : Colors.white,
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.black87,
+              fontSize: 16,
+            ),
+            items: _provinces.map((p) {
+              return DropdownMenuItem<String>(
+                value: p.id,
+                child: Text(p.name),
+              );
+            }).toList(),
+            onChanged: (value) {
+              if (value != null) {
+                setState(() {
+                  _selectedProvince = value;
+                  _selectedDistrict = null;
+                  _districts = [];
+                });
+                // Load districts filtered by selected province
+                _loadDistricts(value);
+              }
+            },
           ),
-          prefixIcon: Icon(Icons.location_city, color: Colors.red.shade900),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.all(16),
         ),
-        dropdownColor: isDark ? Colors.grey.shade800 : Colors.white,
-        style: TextStyle(
-          color: isDark ? Colors.white : Colors.black87,
-          fontSize: 16,
-        ),
-        items: _provinces.map((p) {
-          return DropdownMenuItem<int>(
-            value: p.id,
-            child: Text(p.name),
-          );
-        }).toList(),
-        onChanged: (value) {
-          if (value != null) {
-            setState(() {
-              _selectedProvinceId = value;
-              _selectedDistrictId = null;
-              _districts = [];
-            });
-            _loadDistricts(value);
-          }
-        },
-        validator: (value) =>
-            value == null ? "Please select your province" : null,
       ),
     );
   }
@@ -963,31 +1071,46 @@ class _BloodDonationFormPageState extends State<BloodDonationFormPage> {
           color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
         ),
       ),
-      child: DropdownButtonFormField<int>(
-        initialValue: _selectedDistrictId,
-        decoration: InputDecoration(
-          labelText: "Select District",
-          labelStyle: TextStyle(
-            color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            value: _selectedDistrict,
+            isExpanded: true,
+            hint: Text(
+              _selectedProvince == null
+                  ? "Select province first ↑"
+                  : "Select district ($_selectedProvince)",
+              style: TextStyle(
+                color: isDark ? Colors.grey.shade500 : Colors.grey.shade400,
+                fontSize: 16,
+              ),
+            ),
+            icon: Icon(Icons.arrow_drop_down, color: Colors.red.shade900),
+            dropdownColor: isDark ? Colors.grey.shade800 : Colors.white,
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.black87,
+              fontSize: 16,
+            ),
+            items: _districts.map((d) {
+              return DropdownMenuItem<String>(
+                value: d.id,
+                child: Text(
+                  d.name,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                ),
+              );
+            }).toList(),
+            onChanged: _selectedProvince == null
+                ? null  // Disable when no province selected
+                : (value) {
+                    setState(() => _selectedDistrict = value);
+                  },
           ),
-          prefixIcon: Icon(Icons.place, color: Colors.red.shade900),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.all(16),
         ),
-        dropdownColor: isDark ? Colors.grey.shade800 : Colors.white,
-        style: TextStyle(
-          color: isDark ? Colors.white : Colors.black87,
-          fontSize: 16,
-        ),
-        items: _districts.map((d) {
-          return DropdownMenuItem<int>(
-            value: d.id,
-            child: Text(d.name),
-          );
-        }).toList(),
-        onChanged: (value) => setState(() => _selectedDistrictId = value),
-        validator: (value) =>
-            value == null ? "Please select your district" : null,
       ),
     );
   }

@@ -199,15 +199,15 @@ class _MyBloodRequestsPageState extends State<MyBloodRequestsPage> {
           id: 1,
           patientName: "Ahmed Khan",
           emergencyContact: "0300-1234567",
-          bloodGroup: 1,
+          bloodGroup: "A+",
           bloodGroupName: "A+",
-          gender: 1,
+          gender: "Male",
           genderName: "Male",
-          province: 1,
+          province: "Punjab",
           provinceName: "Punjab",
-          district: 1,
+          district: "Lahore",
           districtName: "Lahore",
-          localLevel: 1,
+          localLevel: "Gulberg",
           localLevelName: "Gulberg",
           unitsRequired: 2,
           requiredDate: "2026-05-10",
@@ -221,15 +221,15 @@ class _MyBloodRequestsPageState extends State<MyBloodRequestsPage> {
           id: 2,
           patientName: "Fatima Ali",
           emergencyContact: "0301-2345678",
-          bloodGroup: 2,
+          bloodGroup: "B+",
           bloodGroupName: "B+",
-          gender: 2,
+          gender: "Female",
           genderName: "Female",
-          province: 1,
+          province: "Punjab",
           provinceName: "Punjab",
-          district: 2,
+          district: "Rawalpindi",
           districtName: "Rawalpindi",
-          localLevel: 2,
+          localLevel: "Saddar",
           localLevelName: "Saddar",
           unitsRequired: 3,
           requiredDate: "2026-05-05",
@@ -334,7 +334,7 @@ class _MyBloodRequestsPageState extends State<MyBloodRequestsPage> {
                   isDark,
                   Icons.location_on,
                   "Location",
-                  "${request.localLevelName ?? 'Unknown'}, ${request.districtName ?? 'Unknown'}",
+                  _formatLocation(request),
                 ),
                 const SizedBox(height: 12),
                 _buildDetailRow(
@@ -414,5 +414,34 @@ class _MyBloodRequestsPageState extends State<MyBloodRequestsPage> {
       default:
         return Colors.grey;
     }
+  }
+
+  String _formatLocation(BloodRequest request) {
+    // Build location parts, excluding null/empty values
+    final List<String> locationParts = [];
+
+    // Add local level ONLY if it's not empty (skip completely if empty)
+    if (request.localLevel.isNotEmpty) {
+      locationParts.add(request.localLevel);
+    }
+
+    // Add district (show districtName if available, otherwise fall back to district)
+    if (request.districtName != null && request.districtName!.isNotEmpty) {
+      locationParts.add(request.districtName!);
+    } else if (request.district.isNotEmpty) {
+      locationParts.add(request.district);
+    }
+
+    // Add province for better location context
+    if (request.provinceName != null && request.provinceName!.isNotEmpty) {
+      locationParts.add(request.provinceName!);
+    } else if (request.province.isNotEmpty) {
+      locationParts.add(request.province);
+    }
+
+    // Join parts with comma
+    // If local level is empty, this will show: "Burewala, Punjab"
+    // If local level exists, this will show: "Gulberg, Burewala, Punjab"
+    return locationParts.join(', ');
   }
 }

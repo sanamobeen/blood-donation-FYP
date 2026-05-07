@@ -28,11 +28,11 @@ class BloodRequestService {
   static Future<BloodRequestResult> createBloodRequest({
     required String patientName,
     required String emergencyContact,
-    required int bloodGroup,
-    required int gender,
-    required int province,
-    required int district,
-    required int localLevel,
+    required String bloodGroup,   // Changed from int to String
+    required String gender,       // Changed from int to String
+    required String province,     // Changed from int to String
+    required String district,     // Changed from int to String
+    required String localLevel,   // Changed from int to String
     required int unitsRequired,
     required String requiredDate,
     required String requiredTime,
@@ -123,20 +123,20 @@ class BloodRequestService {
 
   /// Get all blood requests
   static Future<BloodRequestListResult> getBloodRequests({
-    int? bloodGroup,
+    String? bloodGroup,  // Changed from int to String
     String? status,
-    int? province,
-    int? district,
-    int? gender,
+    String? province,    // Changed from int to String
+    String? district,    // Changed from int to String
+    String? gender,      // Changed from int to String
   }) async {
     try {
       // Build query parameters
       final queryParams = <String, String>{};
-      if (bloodGroup != null) queryParams['blood_group'] = bloodGroup.toString();
+      if (bloodGroup != null) queryParams['blood_group'] = bloodGroup;
       if (status != null) queryParams['status'] = status;
-      if (province != null) queryParams['province'] = province.toString();
-      if (district != null) queryParams['district'] = district.toString();
-      if (gender != null) queryParams['gender'] = gender.toString();
+      if (province != null) queryParams['province'] = province;
+      if (district != null) queryParams['district'] = district;
+      if (gender != null) queryParams['gender'] = gender;
 
       final uri = Uri.parse(ApiConfig.bloodRequestListEndpoint)
           .replace(queryParameters: queryParams);
@@ -226,11 +226,11 @@ class BloodRequestService {
     required int id,
     required String patientName,
     required String emergencyContact,
-    required int bloodGroup,
-    required int gender,
-    required int province,
-    required int district,
-    required int localLevel,
+    required String bloodGroup,   // Changed from int to String
+    required String gender,       // Changed from int to String
+    required String province,     // Changed from int to String
+    required String district,     // Changed from int to String
+    required String localLevel,   // Changed from int to String
     required int unitsRequired,
     required String requiredDate,
     required String requiredTime,
@@ -327,9 +327,11 @@ class BloodRequestService {
   }
 
   /// Get districts by province
-  static Future<LocationResult> getDistricts(int? provinceId) async {
+  static Future<LocationResult> getDistricts([String? provinceId]) async {
     try {
-      final uri = Uri.parse(ApiConfig.districtsEndpoint);
+      // Build query parameters to filter by province
+      final queryParams = provinceId != null ? {'province': provinceId} : <String, String>{};
+      final uri = Uri.parse(ApiConfig.districtsEndpoint).replace(queryParameters: queryParams);
       final response = await http.get(
         uri,
         headers: {'Content-Type': 'application/json'},
@@ -340,11 +342,6 @@ class BloodRequestService {
         final districts = jsonData
             .map((item) => District.fromJson(item))
             .toList();
-
-        // Filter by province if provided
-        if (provinceId != null) {
-          districts.retainWhere((d) => d.province == provinceId);
-        }
 
         return LocationResult.success(districts: districts);
       }
