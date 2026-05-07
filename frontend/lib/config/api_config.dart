@@ -49,11 +49,11 @@ class ApiConfig {
   static String bloodRequestDetailEndpoint(int id) => '$baseUrl/api/blood-requests/$id/';
 
   // Location Data Endpoints
-  static String get provincesEndpoint => '$baseUrl/api/accounts/locations/provinces/';
-  static String get districtsEndpoint => '$baseUrl/api/accounts/locations/districts/';
-  static String get localLevelsEndpoint => '$baseUrl/api/accounts/locations/local-levels/';
-  static String get bloodGroupsEndpoint => '$baseUrl/api/accounts/locations/blood-groups/';
-  static String get gendersEndpoint => '$baseUrl/api/accounts/locations/genders/';
+  static String get provincesEndpoint => '$baseUrl/api/blood-requests/provinces/';
+  static String get districtsEndpoint => '$baseUrl/api/blood-requests/districts/';
+  static String get localLevelsEndpoint => '$baseUrl/api/blood-requests/local-levels/';
+  static String get bloodGroupsEndpoint => '$baseUrl/api/blood-requests/blood-groups/';
+  static String get gendersEndpoint => '$baseUrl/api/blood-requests/genders/';
 
   // Timeout duration
   static const Duration connectTimeout = Duration(seconds: 30);

@@ -7,15 +7,15 @@ class BloodRequest {
   final String? userName;
   final String patientName;
   final String emergencyContact;
-  final int bloodGroup;
+  final String bloodGroup;  // Changed from int to String
   final String? bloodGroupName;
-  final int gender;
+  final String gender;  // Changed from int to String
   final String? genderName;
-  final int province;
+  final String province;  // Changed from int to String
   final String? provinceName;
-  final int district;
+  final String district;  // Changed from int to String
   final String? districtName;
-  final int localLevel;
+  final String localLevel;  // Changed from int to String
   final String? localLevelName;
   final int unitsRequired;
   final String requiredDate;
@@ -62,15 +62,15 @@ class BloodRequest {
       userName: json['user_name'],
       patientName: json['patient_name'] ?? '',
       emergencyContact: json['emergency_contact'] ?? '',
-      bloodGroup: json['blood_group'] ?? 1,
+      bloodGroup: json['blood_group'] ?? 'A+',  // String-based
       bloodGroupName: json['blood_group_name'],
-      gender: json['gender'] ?? 1,
+      gender: json['gender'] ?? 'Male',  // String-based
       genderName: json['gender_name'],
-      province: json['province'] ?? 1,
+      province: json['province'] ?? 'Punjab',  // String-based
       provinceName: json['province_name'],
-      district: json['district'] ?? 1,
+      district: json['district'] ?? 'Lahore',  // String-based
       districtName: json['district_name'],
-      localLevel: json['local_level'] ?? 1,
+      localLevel: json['local_level'] ?? '',  // Empty string when not provided
       localLevelName: json['local_level_name'],
       unitsRequired: json['units_required'] ?? 1,
       requiredDate: json['required_date'] ?? '',
@@ -115,13 +115,18 @@ class BloodRequest {
     }
   }
 
-  /// Get formatted time for display
+  /// Get formatted time for display (12-hour format with AM/PM)
   String get formattedTime {
     try {
       final time = requiredTime.split(':');
       final hour = int.parse(time[0]);
       final minute = int.parse(time[1].split(':')[0]);
-      return '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
+
+      // Convert to 12-hour format
+      final period = hour >= 12 ? 'PM' : 'AM';
+      final displayHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
+
+      return '${displayHour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')} $period';
     } catch (e) {
       return requiredTime;
     }
@@ -130,7 +135,7 @@ class BloodRequest {
 
 /// Location data models
 class Province {
-  final int id;
+  final String id;  // Changed from int to String
   final String name;
   final String? code;
 
@@ -150,21 +155,21 @@ class Province {
 }
 
 class District {
-  final int id;
+  final String id;  // Changed from int to String
   final String name;
-  final int province;
+  final String? province;  // Also changed to String
 
   District({
     required this.id,
     required this.name,
-    required this.province,
+    this.province,
   });
 
   factory District.fromJson(Map<String, dynamic> json) {
     return District(
       id: json['id'],
       name: json['name'],
-      province: json['province'],
+      province: json['province'],  // Will be null if not provided
     );
   }
 }
@@ -190,7 +195,7 @@ class LocalLevel {
 }
 
 class BloodGroup {
-  final int id;
+  final String id;  // Changed from int to String
   final String name;
 
   BloodGroup({
@@ -207,7 +212,7 @@ class BloodGroup {
 }
 
 class Gender {
-  final int id;
+  final String id;  // Changed from int to String
   final String name;
 
   Gender({
