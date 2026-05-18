@@ -22,11 +22,10 @@ ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "127.0.0.1,localhost,10.0.2.2,19
 # Authentication backends
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
-    "apps.accounts.authentication.EmailBackend",
 ]
 
 # Custom User Model
-AUTH_USER_MODEL = "accounts.MyUser"
+AUTH_USER_MODEL = "accounts.CustomUser"
 
 # Media files configuration
 MEDIA_URL = "/media/"

@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'find_donor.dart';
 import 'blood_donation_form_page.dart';
 import 'feedback_page.dart';
-import 'emergency_page.dart';
 import 'emergency_contacts_page.dart';
+import 'emergency_sos_form_page.dart';
 import 'services/language_service.dart';
+import 'role_selection_page.dart';
 
 class MenuPage extends StatefulWidget {
   const MenuPage({super.key});
@@ -111,6 +112,21 @@ class _MenuPageState extends State<MenuPage> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const BloodDonationFormPage()),
+                );
+              },
+            ),
+            const SizedBox(height: 8),
+
+            // Role Selection
+            _buildMenuItem(
+              context,
+              icon: Icons.swap_horiz,
+              title: 'Change Role',
+              color: Colors.deepPurple,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const RoleSelectionPage()),
                 );
               },
             ),
@@ -671,7 +687,7 @@ class _MenuPageState extends State<MenuPage> {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const EmergencyPage()),
+          MaterialPageRoute(builder: (context) => const EmergencySOSFormPage()),
         );
       },
       child: Container(

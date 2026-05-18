@@ -1,585 +1,500 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'services/language_service.dart';
-import 'config/api_config.dart';
+import 'services/auth_service.dart';
 
 class SimpleRegistrationPage extends StatefulWidget {
-  final String initialRole; // 'donor' or 'patient'
+  final String role;
 
-  const SimpleRegistrationPage({super.key, required this.initialRole});
+  const SimpleRegistrationPage({super.key, required this.role});
 
   @override
   State<SimpleRegistrationPage> createState() => _SimpleRegistrationPageState();
 }
 
 class _SimpleRegistrationPageState extends State<SimpleRegistrationPage> {
-  final LanguageProvider _languageProvider = LanguageProvider();
-  String _selectedLanguage = 'en';
-
-  // Form controllers - Step 1 (Common fields)
-  final _fullNameController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  final _phoneController = TextEditingController();
-  final _provinceController = TextEditingController();
-  final _districtController = TextEditingController();
-  final _localLevelController = TextEditingController();
 
-  // Form controllers - Step 2 (Role-specific fields)
-  final _bloodGroupController = TextEditingController();
-  final _emergencyContactNameController = TextEditingController();
-  final _emergencyContactPhoneController = TextEditingController();
+  // Additional required fields
+  String? _selectedGender;
+  String? _selectedBloodGroup;
+  String? _selectedProvince;
+  String? _selectedDistrict;
+  String? _selectedLocalLevel;
+  final _dobController = TextEditingController();
 
-  String _selectedProvince = 'Punjab';
-  String _selectedDistrict = '';
-  String _selectedBloodGroup = 'A+';
+  bool _isLoading = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
-  bool _isRegistering = false;
-  int _currentStep = 1; // 1 = Common fields, 2 = Role-specific fields
-
-  final _formKey1 = GlobalKey<FormState>();
-  final _formKey2 = GlobalKey<FormState>();
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedLanguage = _languageProvider.currentLanguage;
-  }
+  // Available options (matching backend Pakistani data)
+  final List<String> _genders = ['Male', 'Female', 'Other'];
+  final List<String> _bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+  final List<String> _provinces = [
+    'Punjab',
+    'Sindh',
+    'Khyber Pakhtunkhwa',
+    'Balochistan',
+    'Islamabad Capital Territory',
+    'Gilgit-Baltistan',
+    'Azad Jammu and Kashmir'
+  ];
+  final List<String> _districts = [
+    // Major Punjab districts
+    'Lahore', 'Faisalabad', 'Rawalpindi', 'Multan', 'Gujranwala', 'Sialkot',
+    // Major Sindh districts
+    'Karachi', 'Hyderabad', 'Sukkur', 'Larkana',
+    // Major KPK districts
+    'Peshawar', 'Mardan', 'Swat', 'Abbottabad',
+    // Major Balochistan districts
+    'Quetta', 'Gwadar',
+    // Islamabad
+    'Islamabad',
+    // Other major districts
+    'Other'
+  ];
+  final List<String> _localLevels = ['Metro City', 'Sub-Metro City', 'Municipality', 'Rural Municipality', 'Town', 'Village'];
 
   @override
   void dispose() {
-    _fullNameController.dispose();
+    _nameController.dispose();
     _emailController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
-    _phoneController.dispose();
-    _provinceController.dispose();
-    _districtController.dispose();
-    _localLevelController.dispose();
-    _bloodGroupController.dispose();
-    _emergencyContactNameController.dispose();
-    _emergencyContactPhoneController.dispose();
+    _dobController.dispose();
     super.dispose();
   }
 
-  Future<void> _registerCommonFields() async {
-    if (!_formKey1.currentState!.validate()) {
-      return;
-    }
+  void _register() async {
+    if (_formKey.currentState!.validate()) {
+      if (_selectedGender == null ||
+          _selectedBloodGroup == null ||
+          _selectedProvince == null ||
+          _selectedDistrict == null ||
+          _selectedLocalLevel == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please fill in all required fields'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
 
-    setState(() => _isRegistering = true);
+      setState(() {
+        _isLoading = true;
+      });
 
-    try {
-      final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/api/accounts/register/common/'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': _emailController.text.trim().toLowerCase(),
-          'password': _passwordController.text,
-          'full_name': _fullNameController.text.trim(),
-          'phone': _phoneController.text.trim(),
-          'province': _selectedProvince,
-          'district': _selectedDistrict,
-          'local_level': _localLevelController.text.trim(),
-          'role': widget.initialRole, // 'donor' or 'patient'
-        }),
-      ).timeout(const Duration(seconds: 30));
-
-      if (response.statusCode == 201) {
-        final responseData = jsonDecode(response.body);
-        final tokens = responseData['data']['tokens'];
-
-        // Store tokens
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('access_token', tokens['access']);
-        await prefs.setString('refresh_token', tokens['refresh']);
-        await prefs.setString('user_email', _emailController.text.trim().toLowerCase());
-        await prefs.setString('user_name', _fullNameController.text.trim());
-        await prefs.setStringList('user_roles', [widget.initialRole]);
+      try {
+        final result = await AuthService.register(
+          fullName: _nameController.text.trim(),
+          email: _emailController.text.trim(),
+          phone: _phoneController.text.trim(),
+          gender: _selectedGender!,
+          province: _selectedProvince!,
+          district: _selectedDistrict!,
+          localLevel: _selectedLocalLevel!,
+          dateOfBirth: _dobController.text.trim(),
+          bloodGroup: _selectedBloodGroup!,
+          password: _passwordController.text,
+          confirmPassword: _confirmPasswordController.text,
+        );
 
         setState(() {
-          _currentStep = 2;
-          _isRegistering = false;
+          _isLoading = false;
         });
 
-        _showSuccessSnackBar(_selectedLanguage == 'ur' ? 'اکاؤنٹ بن گیا!' : 'Account created!');
-      } else {
-        throw Exception('Registration failed');
-      }
-    } catch (e) {
-      setState(() => _isRegistering = false);
-      _showErrorSnackBar(_selectedLanguage == 'ur' ? 'راجسٹریشن ناکام' : 'Registration failed');
-    }
-  }
-
-  Future<void> _completeRegistration() async {
-    if (!_formKey2.currentState!.validate()) {
-      return;
-    }
-
-    setState(() => _isRegistering = true);
-
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final accessToken = prefs.getString('access_token');
-
-      final Map<String, dynamic> roleSpecificData = {};
-
-      if (widget.initialRole == 'donor') {
-        roleSpecificData['blood_group'] = _selectedBloodGroup;
-      } else {
-        roleSpecificData['blood_type'] = _selectedBloodGroup;
-        roleSpecificData['emergency_contact_name'] = _emergencyContactNameController.text.trim();
-        roleSpecificData['emergency_contact_phone'] = _emergencyContactPhoneController.text.trim();
-      }
-
-      final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/api/accounts/register/${widget.initialRole}/complete/'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $accessToken',
-        },
-        body: jsonEncode(roleSpecificData),
-      ).timeout(const Duration(seconds: 30));
-
-      if (response.statusCode == 200) {
-        _showSuccessSnackBar(_selectedLanguage == 'ur' ? 'رجسٹریشن مکمل!' : 'Registration complete!');
-
-        // Navigate to appropriate dashboard
-        if (!mounted) return;
-
-        if (widget.initialRole == 'donor') {
-          Navigator.pushReplacementNamed(context, '/donor-dashboard');
-        } else {
-          Navigator.pushReplacementNamed(context, '/patient-dashboard');
+        if (mounted) {
+          if (result.success) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(result.displayMessage),
+                backgroundColor: Colors.green,
+              ),
+            );
+            // Navigate to login or main page
+            Navigator.popUntil(context, (route) => route.isFirst);
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(result.errorMessage),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
         }
-      } else {
-        throw Exception('Failed to complete registration');
+      } catch (e) {
+        setState(() {
+          _isLoading = false;
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Registration failed: ${e.toString()}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
-    } catch (e) {
-      setState(() => _isRegistering = false);
-      _showErrorSnackBar(_selectedLanguage == 'ur' ? 'راجسٹریشن ناکام' : 'Registration failed');
     }
-  }
-
-  void _showSuccessSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.green, duration: const Duration(seconds: 2)),
-    );
-  }
-
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.red, duration: const Duration(seconds: 3)),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isDonor = widget.initialRole == 'donor';
-
     return Scaffold(
-      backgroundColor: isDark ? Colors.grey.shade900 : Colors.grey.shade50,
       appBar: AppBar(
-        backgroundColor: isDonor ? Colors.blue.shade900 : Colors.red.shade900,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          isDonor
-              ? (_selectedLanguage == 'ur' ? 'دونر رجسٹر' : 'Donor Registration')
-              : (_selectedLanguage == 'ur' ? 'پیشنٹ رجسٹر' : 'Patient Registration'),
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
+        title: Text('Register as ${widget.role}'),
+        backgroundColor: Colors.red[700],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // Progress indicator
-            _buildProgressIndicator(isDonor),
-
-            const SizedBox(height: 24),
-
-            // Step 1: Common Registration Fields
-            if (_currentStep == 1) _buildCommonFieldsForm(isDark, isDonor),
-
-            // Step 2: Role-Specific Fields
-            if (_currentStep == 2) _buildRoleSpecificFieldsForm(isDark, isDonor),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProgressIndicator(bool isDonor) {
-    return Column(
-      children: [
-        // Step 1 indicator
-        Container(
-          height: 4,
-          decoration: BoxDecoration(
-            color: _currentStep >= 1 ? (isDonor ? Colors.blue.shade900 : Colors.red.shade900) : Colors.grey.shade300,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          _selectedLanguage == 'ur' ? 'مرحلہ 1: بنیادی معلومات' : 'Step 1: Basic Information',
-          style: TextStyle(fontSize: 14, fontWeight: _currentStep == 1 ? FontWeight.bold : FontWeight.normal),
-        ),
-        const SizedBox(height: 16),
-
-        // Step 2 indicator
-        Container(
-          height: 4,
-          decoration: BoxDecoration(
-            color: _currentStep >= 2 ? (isDonor ? Colors.blue.shade900 : Colors.red.shade900) : Colors.grey.shade300,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          isDonor
-              ? (_selectedLanguage == 'ur' ? 'مرحلہ 2: دونر کی تفصیلات' : 'Step 2: Donor Details')
-              : (_selectedLanguage == 'ur' ? 'مرحلہ 2: پیشنٹ کی تفصیلات' : 'Step 2: Patient Details'),
-          style: TextStyle(fontSize: 14, fontWeight: _currentStep == 2 ? FontWeight.bold : FontWeight.normal),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCommonFieldsForm(bool isDark, bool isDonor) {
-    return Form(
-      key: _formKey1,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            _selectedLanguage == 'ur' ? 'بنیادی معلومات' : 'Basic Information',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87),
-          ),
-          const SizedBox(height: 16),
-
-          // Full Name
-          TextFormField(
-            controller: _fullNameController,
-            decoration: InputDecoration(
-              labelText: _selectedLanguage == 'ur' ? 'پورا نام' : 'Full Name',
-              labelStyle: TextStyle(color: isDonor ? Colors.blue.shade900 : Colors.red.shade900),
-              border: const OutlineInputBorder(),
-              focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: isDonor ? Colors.blue.shade900 : Colors.red.shade900, width: 2),
-              ),
-              prefixIcon: Icon(Icons.person, color: isDonor ? Colors.blue.shade900 : Colors.red.shade900),
-            ),
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return _selectedLanguage == 'ur' ? 'براہ کرم نام درج کریں' : 'Please enter your full name';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 16),
-
-          // Email
-          TextFormField(
-            controller: _emailController,
-            keyboardType: TextInputType.emailAddress,
-            decoration: InputDecoration(
-              labelText: _selectedLanguage == 'ur' ? 'ای میل' : 'Email',
-              labelStyle: TextStyle(color: isDonor ? Colors.blue.shade900 : Colors.red.shade900),
-              border: const OutlineInputBorder(),
-              focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: isDonor ? Colors.blue.shade900 : Colors.red.shade900, width: 2),
-              ),
-              prefixIcon: Icon(Icons.email, color: isDonor ? Colors.blue.shade900 : Colors.red.shade900),
-            ),
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return _selectedLanguage == 'ur' ? 'براہ کرم ای میل درج کریں' : 'Please enter email';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 16),
-
-          // Phone
-          TextFormField(
-            controller: _phoneController,
-            keyboardType: TextInputType.phone,
-            decoration: InputDecoration(
-              labelText: _selectedLanguage == 'ur' ? 'فون نمبر' : 'Phone Number',
-              labelStyle: TextStyle(color: isDonor ? Colors.blue.shade900 : Colors.red.shade900),
-              border: const OutlineInputBorder(),
-              focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: isDonor ? Colors.blue.shade900 : Colors.red.shade900, width: 2),
-              ),
-              prefixIcon: Icon(Icons.phone, color: isDonor ? Colors.blue.shade900 : Colors.red.shade900),
-            ),
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return _selectedLanguage == 'ur' ? 'براہ کرم فون نمبر درج کریں' : 'Please enter phone number';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 16),
-
-          // Password
-          TextFormField(
-            controller: _passwordController,
-            obscureText: true,
-            decoration: InputDecoration(
-              labelText: _selectedLanguage == 'ur' ? 'پاسورڈ' : 'Password',
-              labelStyle: TextStyle(color: isDonor ? Colors.blue.shade900 : Colors.red.shade900),
-              border: const OutlineInputBorder(),
-              focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: isDonor ? Colors.blue.shade900 : Colors.red.shade900, width: 2),
-              ),
-              prefixIcon: Icon(Icons.lock, color: isDonor ? Colors.blue.shade900 : Colors.red.shade900),
-            ),
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return _selectedLanguage == 'ur' ? 'براہ کرم پاسورڈ درج کریں' : 'Please enter password';
-              }
-              if (value.length < 6) {
-                return _selectedLanguage == 'ur' ? 'پاسورڈ کم از کم 6 حروف کا' : 'Password must be at least 6 characters';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 16),
-
-          // Confirm Password
-          TextFormField(
-            controller: _confirmPasswordController,
-            obscureText: true,
-            decoration: InputDecoration(
-              labelText: _selectedLanguage == 'ur' ? 'پاسورڹ تصدیق کریں' : 'Confirm Password',
-              labelStyle: TextStyle(color: isDonor ? Colors.blue.shade900 : Colors.red.shade900),
-              border: const OutlineInputBorder(),
-              focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: isDonor ? Colors.blue.shade900 : Colors.red.shade900, width: 2),
-              ),
-              prefixIcon: Icon(Icons.lock_outline, color: isDonor ? Colors.blue.shade900 : Colors.red.shade900),
-            ),
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return _selectedLanguage == 'ur' ? 'براہ کرم پاسورڈ تصدیق کریں' : 'Please confirm password';
-              }
-              if (value != _passwordController.text) {
-                return _selectedLanguage == 'ur' ? 'پاسورڈز مماثل نہیں' : 'Passwords do not match';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 16),
-
-          // Province Dropdown
-          DropdownButtonFormField<String>(
-            initialValue: _selectedProvince,
-            decoration: InputDecoration(
-              labelText: _selectedLanguage == 'ur' ? 'صوبہ' : 'Province',
-              labelStyle: TextStyle(color: isDonor ? Colors.blue.shade900 : Colors.red.shade900),
-              border: const OutlineInputBorder(),
-              focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: isDonor ? Colors.blue.shade900 : Colors.red.shade900, width: 2),
-              ),
-              prefixIcon: Icon(Icons.location_city, color: isDonor ? Colors.blue.shade900 : Colors.red.shade900),
-            ),
-            items: const [
-              DropdownMenuItem(value: 'Punjab', child: Text('Punjab')),
-              DropdownMenuItem(value: 'Sindh', child: Text('Sindh')),
-              DropdownMenuItem(value: 'Khyber Pakhtunkhwa', child: Text('Khyber Pakhtunkhwa')),
-              DropdownMenuItem(value: 'Balochistan', child: Text('Balochistan')),
-            ],
-            onChanged: (value) {
-              setState(() {
-                _selectedProvince = value ?? 'Punjab';
-                _selectedDistrict = '';
-              });
-            },
-          ),
-          const SizedBox(height: 16),
-
-          // District Input
-          TextFormField(
-            controller: _districtController,
-            decoration: InputDecoration(
-              labelText: _selectedLanguage == 'ur' ? 'ضلع' : 'District',
-              labelStyle: TextStyle(color: isDonor ? Colors.blue.shade900 : Colors.red.shade900),
-              border: const OutlineInputBorder(),
-              focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: isDonor ? Colors.blue.shade900 : Colors.red.shade900, width: 2),
-              ),
-              prefixIcon: Icon(Icons.location_on, color: isDonor ? Colors.blue.shade900 : Colors.red.shade900),
-            ),
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return _selectedLanguage == 'ur' ? 'براہ کرم ضلع درج کریں' : 'Please enter district';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 24),
-
-          // Next Button
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: ElevatedButton(
-              onPressed: _isRegistering ? null : _registerCommonFields,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isDonor ? Colors.blue.shade900 : Colors.red.shade900,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: _isRegistering
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : Text(
-                      _selectedLanguage == 'ur' ? 'اگلے' : 'Next',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Icon(
+                    Icons.person_add,
+                    size: 80,
+                    color: Colors.red[700],
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Create ${widget.role} Account',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red[700],
                     ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 32),
+
+                  // Personal Information Section
+                  _buildSectionHeader('Personal Information'),
+                  const SizedBox(height: 16),
+
+                  TextFormField(
+                    controller: _nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Full Name',
+                      prefixIcon: Icon(Icons.person),
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your name';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  TextFormField(
+                    controller: _emailController,
+                    decoration: const InputDecoration(
+                      labelText: 'Email',
+                      prefixIcon: Icon(Icons.email),
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your email';
+                      }
+                      if (!value.contains('@')) {
+                        return 'Please enter a valid email';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  TextFormField(
+                    controller: _phoneController,
+                    decoration: const InputDecoration(
+                      labelText: 'Phone Number',
+                      prefixIcon: Icon(Icons.phone),
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.phone,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your phone number';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Dropdown fields
+                  DropdownButtonFormField<String>(
+                    initialValue: _selectedGender,
+                    decoration: const InputDecoration(
+                      labelText: 'Gender',
+                      prefixIcon: Icon(Icons.wc),
+                      border: OutlineInputBorder(),
+                    ),
+                    items: _genders.map((String gender) {
+                      return DropdownMenuItem(
+                        value: gender,
+                        child: Text(gender),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        _selectedGender = newValue;
+                      });
+                    },
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please select your gender';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  DropdownButtonFormField<String>(
+                    initialValue: _selectedBloodGroup,
+                    decoration: const InputDecoration(
+                      labelText: 'Blood Group',
+                      prefixIcon: Icon(Icons.bloodtype),
+                      border: OutlineInputBorder(),
+                    ),
+                    items: _bloodGroups.map((String bloodGroup) {
+                      return DropdownMenuItem(
+                        value: bloodGroup,
+                        child: Text(bloodGroup),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        _selectedBloodGroup = newValue;
+                      });
+                    },
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please select your blood group';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  TextFormField(
+                    controller: _dobController,
+                    decoration: const InputDecoration(
+                      labelText: 'Date of Birth (YYYY-MM-DD)',
+                      prefixIcon: Icon(Icons.calendar_today),
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.datetime,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your date of birth';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Location Section
+                  _buildSectionHeader('Location Information'),
+                  const SizedBox(height: 16),
+
+                  DropdownButtonFormField<String>(
+                    initialValue: _selectedProvince,
+                    decoration: const InputDecoration(
+                      labelText: 'Province',
+                      prefixIcon: Icon(Icons.map),
+                      border: OutlineInputBorder(),
+                    ),
+                    items: _provinces.map((String province) {
+                      return DropdownMenuItem(
+                        value: province,
+                        child: Text(province),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        _selectedProvince = newValue;
+                      });
+                    },
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please select your province';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  DropdownButtonFormField<String>(
+                    initialValue: _selectedDistrict,
+                    decoration: const InputDecoration(
+                      labelText: 'District',
+                      prefixIcon: Icon(Icons.location_city),
+                      border: OutlineInputBorder(),
+                    ),
+                    items: _districts.map((String district) {
+                      return DropdownMenuItem(
+                        value: district,
+                        child: Text(district),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        _selectedDistrict = newValue;
+                      });
+                    },
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please select your district';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  DropdownButtonFormField<String>(
+                    initialValue: _selectedLocalLevel,
+                    decoration: const InputDecoration(
+                      labelText: 'Local Level',
+                      prefixIcon: Icon(Icons.apartment),
+                      border: OutlineInputBorder(),
+                    ),
+                    items: _localLevels.map((String localLevel) {
+                      return DropdownMenuItem(
+                        value: localLevel,
+                        child: Text(localLevel),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        _selectedLocalLevel = newValue;
+                      });
+                    },
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please select your local level';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Password Section
+                  _buildSectionHeader('Password'),
+                  const SizedBox(height: 16),
+
+                  TextFormField(
+                    controller: _passwordController,
+                    decoration: InputDecoration(
+                      labelText: 'Password',
+                      prefixIcon: const Icon(Icons.lock),
+                      suffixIcon: IconButton(
+                        icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                      ),
+                      border: const OutlineInputBorder(),
+                    ),
+                    obscureText: _obscurePassword,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a password';
+                      }
+                      if (value.length < 6) {
+                        return 'Password must be at least 6 characters';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  TextFormField(
+                    controller: _confirmPasswordController,
+                    decoration: InputDecoration(
+                      labelText: 'Confirm Password',
+                      prefixIcon: const Icon(Icons.lock_outline),
+                      suffixIcon: IconButton(
+                        icon: Icon(_obscureConfirmPassword ? Icons.visibility_off : Icons.visibility),
+                        onPressed: () {
+                          setState(() {
+                            _obscureConfirmPassword = !_obscureConfirmPassword;
+                          });
+                        },
+                      ),
+                      border: const OutlineInputBorder(),
+                    ),
+                    obscureText: _obscureConfirmPassword,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please confirm your password';
+                      }
+                      if (value != _passwordController.text) {
+                        return 'Passwords do not match';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 32),
+
+                  ElevatedButton(
+                    onPressed: _isLoading ? null : _register,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red[700],
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : const Text(
+                            'Register',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildRoleSpecificFieldsForm(bool isDark, bool isDonor) {
-    return Form(
-      key: _formKey2,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            isDonor
-                ? (_selectedLanguage == 'ur' ? 'دونر کی تفصیلات' : 'Donor Details')
-                : (_selectedLanguage == 'ur' ? 'پیشنٹ کی تفصیلات' : 'Patient Details'),
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87),
-          ),
-          const SizedBox(height: 16),
-
-          // Blood Group (Common for both but different purpose)
-          DropdownButtonFormField<String>(
-            initialValue: _selectedBloodGroup,
-            decoration: InputDecoration(
-              labelText: isDonor
-                  ? (_selectedLanguage == 'ur' ? 'بلڈ گروپ' : 'Blood Group')
-                  : (_selectedLanguage == 'ur' ? 'بلڈ ٹائپ' : 'Blood Type'),
-              labelStyle: TextStyle(color: isDonor ? Colors.blue.shade900 : Colors.red.shade900),
-              border: const OutlineInputBorder(),
-              focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: isDonor ? Colors.blue.shade900 : Colors.red.shade900, width: 2),
-              ),
-              prefixIcon: const Icon(Icons.bloodtype, color: Colors.red),
-            ),
-            items: const [
-              DropdownMenuItem(value: 'A+', child: Text('A+')),
-              DropdownMenuItem(value: 'A-', child: Text('A-')),
-              DropdownMenuItem(value: 'B+', child: Text('B+')),
-              DropdownMenuItem(value: 'B-', child: Text('B-')),
-              DropdownMenuItem(value: 'AB+', child: Text('AB+')),
-              DropdownMenuItem(value: 'AB-', child: Text('AB-')),
-              DropdownMenuItem(value: 'O+', child: Text('O+')),
-              DropdownMenuItem(value: 'O-', child: Text('O-')),
-            ],
-            onChanged: (value) {
-              setState(() => _selectedBloodGroup = value ?? 'A+');
-            },
-          ),
-          const SizedBox(height: 16),
-
-          // Patient-specific fields
-          if (!isDonor) ...[
-            // Emergency Contact Name
-            TextFormField(
-              controller: _emergencyContactNameController,
-              decoration: InputDecoration(
-                labelText: _selectedLanguage == 'ur' ? 'ایمرجنسی کا نام' : 'Emergency Contact Name',
-                labelStyle: TextStyle(color: Colors.red.shade900),
-                border: const OutlineInputBorder(),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.red.shade900, width: 2),
-                ),
-                prefixIcon: Icon(Icons.contact_phone, color: Colors.red.shade900),
-              ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return _selectedLanguage == 'ur' ? 'براہ کرم نام درج کریں' : 'Please enter name';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-
-            // Emergency Contact Phone
-            TextFormField(
-              controller: _emergencyContactPhoneController,
-              keyboardType: TextInputType.phone,
-              decoration: InputDecoration(
-                labelText: _selectedLanguage == 'ur' ? 'ایمرجنسی فون' : 'Emergency Contact Phone',
-                labelStyle: TextStyle(color: Colors.red.shade900),
-                border: const OutlineInputBorder(),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.red.shade900, width: 2),
-                ),
-                prefixIcon: Icon(Icons.phone, color: Colors.red.shade900),
-              ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return _selectedLanguage == 'ur' ? 'براہ کرم فون درج کریں' : 'Please enter phone';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 24),
-          ],
-
-          // Complete Registration Button
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: ElevatedButton(
-              onPressed: _isRegistering ? null : _completeRegistration,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isDonor ? Colors.blue.shade900 : Colors.red.shade900,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: _isRegistering
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : Text(
-                      _selectedLanguage == 'ur' ? 'رجسٹر مکمل کریں' : 'Complete Registration',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-            ),
-          ),
-        ],
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 12.0),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: Colors.red[700],
+        ),
       ),
     );
   }
