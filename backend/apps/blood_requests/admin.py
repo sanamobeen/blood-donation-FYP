@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django import forms
-from .models import BloodRequest
+# from .models import BloodRequest  # Temporarily commented out for migration
 
 # District choices for admin dropdown (string-based like registration)
 DISTRICT_CHOICES = [
@@ -65,11 +65,11 @@ class BloodRequestAdminForm(forms.ModelForm):
     )
 
     class Meta:
-        model = BloodRequest
+        model = None  # Temporarily set to None for migration
         fields = '__all__'
 
 
-@admin.register(BloodRequest)
+# @admin.register(BloodRequest)  # Temporarily commented out for migration
 class BloodRequestAdmin(admin.ModelAdmin):
     form = BloodRequestAdminForm
     list_display = [

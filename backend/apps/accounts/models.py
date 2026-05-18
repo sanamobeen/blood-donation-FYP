@@ -1,11 +1,110 @@
 from django.db import models
-from django.contrib.auth.models import (
-    AbstractBaseUser,
-    BaseUserManager,
-    PermissionsMixin,
-)
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.utils import timezone
 import uuid
+
+# Custom User Manager
+class CustomUserManager(BaseUserManager):
+    """Custom user manager for email-based authentication"""
+
+    def create_user(self, email, password=None, **extra_fields):
+        """Create and save a regular user with the given email and password."""
+        if not email:
+            raise ValueError('The Email field must be set')
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, password=None, **extra_fields):
+        """Create and save a superuser with the given email and password."""
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('is_active', True)
+
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError('Superuser must have is_staff=True.')
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError('Superuser must have is_superuser=True.')
+
+        return self.create_user(email, password, **extra_fields)
+
+
+# Custom User Model
+class CustomUser(AbstractBaseUser, PermissionsMixin):
+    """
+    Custom user model for blood donation system.
+    Uses email as the primary identifier instead of username.
+    """
+
+    email = models.EmailField(
+        unique=True,
+        max_length=255,
+        verbose_name="Email Address",
+        help_text="Primary email address for authentication and contact"
+    )
+    full_name = models.CharField(
+        max_length=150,
+        blank=True,
+        verbose_name="First Name",
+        help_text="User's first name"
+    )
+    
+    phone = models.CharField(
+        max_length=15,
+        blank=True,
+        null=True,
+        verbose_name="Phone Number",
+        help_text="Contact phone number"
+    )
+    is_staff = models.BooleanField(
+        default=False,
+        verbose_name="Staff Status",
+        help_text="Designates whether the user can log into this admin site"
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Active",
+        help_text="Designates whether this user should be treated as active"
+    )
+    date_joined = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Date Joined",
+        help_text="Date and time when the user account was created"
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Last Updated",
+        help_text="Date and time when the user was last updated"
+    )
+
+    objects = CustomUserManager()
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = []  # No additional required fields besides email/password
+
+    class Meta:
+        verbose_name = "User"
+        verbose_name_plural = "Users"
+        ordering = ['-date_joined']
+        indexes = [
+            models.Index(fields=['email']),
+            models.Index(fields=['phone']),
+            models.Index(fields=['is_active']),
+        ]
+
+    def __str__(self) -> str:
+        return self.email
+
+    def get_full_name(self) -> str:
+        """Return the user's full name."""
+        return self.full_name if self.full_name else self.email
+
+    def get_short_name(self) -> str:
+        """Return the user's short name."""
+        return self.full_name.split()[0] if self.full_name else self.email.split('@')[0]
+
 
 # Choices
 GENDERS = [
@@ -25,160 +124,26 @@ PROVINCES = [
 ]
 
 DISTRICTS = [
-    # Punjab
-    ("Ahmedpur East", "Ahmedpur East"),
-    ("Arifwala", "Arifwala"),
-    ("Attock", "Attock"),
-    ("Bahawalnagar", "Bahawalnagar"),
-    ("Bahawalpur", "Bahawalpur"),
-    ("Bhakkar", "Bhakkar"),
-    ("Burewala", "Burewala"),
-    ("Chakwal", "Chakwal"),
-    ("Chiniot", "Chiniot"),
-    ("Dera Ghazi Khan", "Dera Ghazi Khan"),
-    ("Faisalabad", "Faisalabad"),
-    ("Ferozewala", "Ferozewala"),
-    ("Gujranwala", "Gujranwala"),
-    ("Gujrat", "Gujrat"),
-    ("Hafizabad", "Hafizabad"),
-    ("Jhang", "Jhang"),
-    ("Jhelum", "Jhelum"),
-    ("Kasur", "Kasur"),
-    ("Khanewal", "Khanewal"),
-    ("Khushab", "Khushab"),
+    # Punjab (major districts only for brevity)
     ("Lahore", "Lahore"),
-    ("Layyah", "Layyah"),
-    ("Lodhran", "Lodhran"),
-    ("Mandi Bahauddin", "Mandi Bahauddin"),
-    ("Mianwali", "Mianwali"),
-    ("Multan", "Multan"),
-    ("Muzaffargarh", "Muzaffargarh"),
-    ("Nankana Sahib", "Nankana Sahib"),
-    ("Narowal", "Narowal"),
-    ("Okara", "Okara"),
-    ("Pakpattan", "Pakpattan"),
-    ("Rahim Yar Khan", "Rahim Yar Khan"),
-    ("Rajanpur", "Rajanpur"),
+    ("Faisalabad", "Faisalabad"),
     ("Rawalpindi", "Rawalpindi"),
-    ("Sahiwal", "Sahiwal"),
-    ("Sargodha", "Sargodha"),
-    ("Sheikhupura", "Sheikhupura"),
+    ("Multan", "Multan"),
+    ("Gujranwala", "Gujranwala"),
     ("Sialkot", "Sialkot"),
-    ("Toba Tek Singh", "Toba Tek Singh"),
-    ("Vehari", "Vehari"),
-    ("Wazirabad", "Wazirabad"),
-    # Sindh
-    ("Badin", "Badin"),
-    ("Bhan", "Bhan"),
-    ("Chachro", "Chachro"),
-    ("Dadu", "Dadu"),
-    ("Diplo", "Diplo"),
-    ("Ghotki", "Ghotki"),
-    ("Hyderabad", "Hyderabad"),
-    ("Jacobabad", "Jacobabad"),
-    ("Jamshoro", "Jamshoro"),
+    # Sindh (major districts)
     ("Karachi", "Karachi"),
-    ("Kashmore", "Kashmore"),
-    ("Kandhkot", "Kandhkot"),
-    ("Khairpur", "Khairpur"),
-    ("Kotri", "Kotri"),
-    ("Larkana", "Larkana"),
-    ("Matiari", "Matiari"),
-    ("Mirpur Khas", "Mirpur Khas"),
-    ("Mithi", "Mithi"),
-    ("Nawabshah", "Nawabshah"),
-    ("Naushehro Feroze", "Naushehro Feroze"),
-    ("Qambar", "Qambar"),
-    ("Sanghar", "Sanghar"),
-    ("Shahdadkot", "Shahdadkot"),
-    ("Shikarpur", "Shikarpur"),
+    ("Hyderabad", "Hyderabad"),
     ("Sukkur", "Sukkur"),
-    ("Tando Adam", "Tando Adam"),
-    ("Tando Allahyar", "Tando Allahyar"),
-    ("Thatta", "Thatta"),
-    ("Umerkot", "Umerkot"),
-    # Khyber Pakhtunkhwa
-    ("Abbottabad", "Abbottabad"),
-    ("Bannu", "Bannu"),
-    ("Batagram", "Batagram"),
-    ("Buner", "Buner"),
-    ("Charsadda", "Charsadda"),
-    ("Chitral", "Chitral"),
-    ("Dera Ismail Khan", "Dera Ismail Khan"),
-    ("Dir", "Dir"),
-    ("Haripur", "Haripur"),
-    ("Karak", "Karak"),
-    ("Kohat", "Kohat"),
-    ("Kohistan", "Kohistan"),
-    ("Lakki Marwat", "Lakki Marwat"),
-    ("Lower Dir", "Lower Dir"),
-    ("Malakand", "Malakand"),
-    ("Mansehra", "Mansehra"),
-    ("Mardan", "Mardan"),
-    ("Nowshera", "Nowshera"),
+    # KPK (major districts)
     ("Peshawar", "Peshawar"),
-    ("Shangla", "Shangla"),
-    ("Swabi", "Swabi"),
-    ("Swat", "Swat"),
-    ("Tank", "Tank"),
-    ("Upper Dir", "Upper Dir"),
-    # Balochistan
-    ("Awaran", "Awaran"),
-    ("Barkhan", "Barkhan"),
-    ("Bolan", "Bolan"),
-    ("Chagai", "Chagai"),
-    ("Dera Bugti", "Dera Bugti"),
-    ("Gwadar", "Gwadar"),
-    ("Harnai", "Harnai"),
-    ("Jafarabad", "Jafarabad"),
-    ("Jhal Magsi", "Jhal Magsi"),
-    ("Kalat", "Kalat"),
-    ("Kech", "Kech"),
-    ("Kharan", "Kharan"),
-    ("Khuzdar", "Khuzdar"),
-    ("Killa Abdullah", "Killa Abdullah"),
-    ("Killa Saifullah", "Killa Saifullah"),
-    ("Kohlu", "Kohlu"),
-    ("Lasbela", "Lasbela"),
-    ("Loralai", "Loralai"),
-    ("Mastung", "Mastung"),
-    ("Musakhel", "Musakhel"),
-    ("Nasirabad", "Nasirabad"),
-    ("Nushki", "Nushki"),
-    ("Panjgur", "Panjgur"),
-    ("Pishin", "Pishin"),
+    ("Mardan", "Mardan"),
+    # Balochistan (major districts)
     ("Quetta", "Quetta"),
-    ("Sherani", "Sherani"),
-    ("Sibi", "Sibi"),
-    ("Sohbatpur", "Sohbatpur"),
-    ("Washuk", "Washuk"),
-    ("Zhob", "Zhob"),
-    ("Ziarat", "Ziarat"),
-    # Islamabad Capital Territory
+    # Islamabad
     ("Islamabad", "Islamabad"),
-    # Gilgit-Baltistan
-    ("Astore", "Astore"),
-    ("Ghizer", "Ghizer"),
-    ("Ghanche", "Ghanche"),
-    ("Gilgit", "Gilgit"),
-    ("Hunza", "Hunza"),
-    ("Nagar", "Nagar"),
-    ("Skardu", "Skardu"),
-    ("Shigar", "Shigar"),
-    ("Kharmang", "Kharmang"),
-    ("Roundu", "Roundu"),
-    # Azad Jammu and Kashmir
-    ("Bagh", "Bagh"),
-    ("Bhimber", "Bhimber"),
-    ("Hattian", "Hattian"),
-    ("Haveli", "Haveli"),
-    ("Kotli", "Kotli"),
-    ("Mirpur", "Mirpur"),
-    ("Muzaffarabad", "Muzaffarabad"),
-    ("Neelum", "Neelum"),
-    ("Poonch", "Poonch"),
-    ("Rawalakot", "Rawalakot"),
-    ("Sudhanoti", "Sudhanoti"),
+    # Other
+    ("Other", "Other"),
 ]
 
 BLOOD_GROUPS = [
@@ -192,71 +157,18 @@ BLOOD_GROUPS = [
     ("O-", "O-"),
 ]
 
-REQUEST_STATUS = [
-    ("pending", "Pending"),
-    ("accepted", "Accepted"),
-    ("partially_fulfilled", "Partially Fulfilled"),
-    ("completed", "Completed"),
-    ("cancelled", "Cancelled"),
-]
-
-DONATION_STATUS = [
-    ("pending", "Pending"),
-    ("accepted", "Accepted"),
-    ("rejected", "Rejected"),
-    ("completed", "Completed"),
-]
-
-
-# Manager
-class MyUserManager(BaseUserManager):
-
-    def create_user(self, email, password=None, **extra_fields):
-        if not email:
-            raise ValueError("Email is required")
-
-        email = self.normalize_email(email)
-        extra_fields.setdefault("is_staff", False)
-        extra_fields.setdefault("is_superuser", False)
-        extra_fields.setdefault("is_active", True)
-
-        user = self.model(email=email, **extra_fields)
-        user.set_password(password)
-        user.save(using=self._db)
-        return user
-
-    def create_superuser(self, email, password=None, **extra_fields):
-        extra_fields.setdefault("is_staff", True)
-        extra_fields.setdefault("is_superuser", True)
-        extra_fields.setdefault("is_active", True)
-        extra_fields.setdefault("full_name", "Superuser")
-        extra_fields.setdefault("phone", "")
-        extra_fields.setdefault("gender", "Other")
-        return self.create_user(email, password, **extra_fields)
-
-
-# User Model - SINGLE TABLE FOR EVERYTHING
-class MyUser(AbstractBaseUser, PermissionsMixin):
+# User Profile Model - Extends Django's default User
+class UserProfile(models.Model):
     """
-    Custom User model for blood donation system.
-    All fields directly in this table - no separate lookup tables.
+    Extended user profile for blood donation system.
+    Links to CustomUser model for additional blood donation specific information.
     """
 
-    id = models.AutoField(primary_key=True)
-    full_name = models.CharField(
-        max_length=100,
-        blank=True,
-        default="",
-        verbose_name="Full Name",
-        help_text="User's complete name"
-    )
-    email = models.EmailField(
-        unique=True,
-        verbose_name="Email Address",
-        help_text="Unique email address for login",
-    )
-    password = models.CharField(
-        max_length=128, verbose_name="Password", help_text="Hashed password"
+    user = models.OneToOneField(
+        'accounts.CustomUser',
+        on_delete=models.CASCADE,
+        related_name="blood_profile",
+        verbose_name="User"
     )
     phone = models.CharField(
         max_length=15,
@@ -310,61 +222,47 @@ class MyUser(AbstractBaseUser, PermissionsMixin):
         verbose_name="Blood Group",
         help_text="User's blood group",
     )
-
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name="Created At",
-        help_text="Account creation timestamp",
+        help_text="Profile creation timestamp",
     )
     updated_at = models.DateTimeField(
-        auto_now=True, verbose_name="Updated At", help_text="Last update timestamp"
+        auto_now=True,
+        verbose_name="Updated At",
+        help_text="Last update timestamp"
     )
-
-    is_staff = models.BooleanField(
-        default=False,
-        verbose_name="Staff Status",
-        help_text="Designates whether the user can log into this admin site",
-    )
-    is_active = models.BooleanField(
-        default=True,
-        verbose_name="Active",
-        help_text="Designates whether this user should be treated as active",
-    )
-
-    objects = MyUserManager()
-
-    USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = []
 
     class Meta:
-        verbose_name = "User"
-        verbose_name_plural = "Users"
+        verbose_name = "User Profile"
+        verbose_name_plural = "User Profiles"
         ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=["email"]),
-            models.Index(fields=["created_at"]),
+            models.Index(fields=["user"]),
             models.Index(fields=["blood_group"]),
+            models.Index(fields=["created_at"]),
         ]
+
+    def __str__(self) -> str:
+        return f"{self.user.email} - Profile"
 
     def get_full_name(self) -> str:
         """Return the user's full name."""
-        return self.full_name.strip()
-
-    def __str__(self) -> str:
-        return self.email
+        return f"{self.user.first_name} {self.user.last_name}".strip() or self.user.username
 
 
-# Donor Model - Uses user_id instead of ForeignKey
+# Donor Model - Uses proper ForeignKey to User
 class Donor(models.Model):
     """
     Donor profile with blood donation specific information.
-    References user by ID instead of ForeignKey.
+    Properly linked to CustomUser model.
     """
 
-    id = models.AutoField(primary_key=True)
-    user_id = models.IntegerField(
-        verbose_name="User ID",
-        help_text="Reference to the user account ID",
+    user = models.OneToOneField(
+        'accounts.CustomUser',
+        on_delete=models.CASCADE,
+        related_name="donor_profile",
+        verbose_name="User"
     )
     is_available = models.BooleanField(
         default=True,
@@ -393,12 +291,12 @@ class Donor(models.Model):
         verbose_name_plural = "Donors"
         ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=["user_id"]),
+            models.Index(fields=["user"]),
             models.Index(fields=["is_available"]),
         ]
 
     def __str__(self) -> str:
-        return f"User ID: {self.user_id}"
+        return f"{self.user.email} - Donor"
 
     def can_donate(self) -> bool:
         """
@@ -422,9 +320,11 @@ class EmailVerification(models.Model):
     """
 
     id = models.AutoField(primary_key=True)
-    user_id = models.IntegerField(
-        verbose_name="User ID",
-        help_text="Reference to the user account ID",
+    user = models.ForeignKey(
+        'accounts.CustomUser',
+        on_delete=models.CASCADE,
+        related_name="email_verifications",
+        verbose_name="User"
     )
     token = models.UUIDField(
         default=uuid.uuid4,
@@ -439,7 +339,9 @@ class EmailVerification(models.Model):
         help_text="Token creation timestamp",
     )
     is_used = models.BooleanField(
-        default=False, verbose_name="Used", help_text="Whether the token has been used"
+        default=False,
+        verbose_name="Used",
+        help_text="Whether the token has been used"
     )
 
     class Meta:
@@ -448,11 +350,11 @@ class EmailVerification(models.Model):
         ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["token"]),
-            models.Index(fields=["user_id", "is_used"]),
+            models.Index(fields=["user", "is_used"]),
         ]
 
     def __str__(self) -> str:
-        return f"User ID: {self.user_id} - {self.token}"
+        return f"{self.user.email} - {self.token}"
 
     def is_valid(self) -> bool:
         """
@@ -473,9 +375,11 @@ class PasswordReset(models.Model):
     """
 
     id = models.AutoField(primary_key=True)
-    user_id = models.IntegerField(
-        verbose_name="User ID",
-        help_text="Reference to the user account ID",
+    user = models.ForeignKey(
+        'accounts.CustomUser',
+        on_delete=models.CASCADE,
+        related_name="password_resets",
+        verbose_name="User"
     )
     token = models.UUIDField(
         default=uuid.uuid4,
@@ -490,7 +394,9 @@ class PasswordReset(models.Model):
         help_text="Token creation timestamp",
     )
     is_used = models.BooleanField(
-        default=False, verbose_name="Used", help_text="Whether the token has been used"
+        default=False,
+        verbose_name="Used",
+        help_text="Whether the token has been used"
     )
 
     class Meta:
@@ -499,11 +405,11 @@ class PasswordReset(models.Model):
         ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["token"]),
-            models.Index(fields=["user_id", "is_used"]),
+            models.Index(fields=["user", "is_used"]),
         ]
 
     def __str__(self) -> str:
-        return f"User ID: {self.user_id} - {self.token}"
+        return f"{self.user.email} - {self.token}"
 
     def is_valid(self) -> bool:
         """
