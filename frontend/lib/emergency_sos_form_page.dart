@@ -15,18 +15,25 @@ class _EmergencySOSFormPageState extends State<EmergencySOSFormPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _contactController = TextEditingController();
+  final _locationController = TextEditingController();
   String? _selectedBloodGroup;
 
   final List<String> _bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
   bool _isLoading = false;
   bool _isGettingLocation = false;
-  String _locationText = 'Press button to get location';
+
+  @override
+  void initState() {
+    super.initState();
+    _locationController.text = 'Press button to get location';
+  }
 
   @override
   void dispose() {
     _nameController.dispose();
     _contactController.dispose();
+    _locationController.dispose();
     super.dispose();
   }
 
@@ -44,7 +51,7 @@ class _EmergencySOSFormPageState extends State<EmergencySOSFormPage> {
 
       if (mounted) {
         setState(() {
-          _locationText = address;
+          _locationController.text = address;
           _isGettingLocation = false;
         });
 
@@ -65,7 +72,7 @@ class _EmergencySOSFormPageState extends State<EmergencySOSFormPage> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _locationText = 'Failed to get location';
+          _locationController.text = 'Failed to get location';
           _isGettingLocation = false;
         });
 
@@ -81,7 +88,9 @@ class _EmergencySOSFormPageState extends State<EmergencySOSFormPage> {
 
   Future<void> _sendSOS() async {
     if (_formKey.currentState!.validate()) {
-      if (_locationText == 'Press button to get location' || _locationText == 'Failed to get location') {
+      if (_locationController.text.isEmpty ||
+          _locationController.text == 'Press button to get location' ||
+          _locationController.text == 'Failed to get location') {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Please get your location first'),
@@ -118,7 +127,7 @@ class _EmergencySOSFormPageState extends State<EmergencySOSFormPage> {
         }
 
         // Show preview dialog
-        final shouldProceed = await _showContactsPreviewDialog(contacts, _locationText);
+        final shouldProceed = await _showContactsPreviewDialog(contacts, _locationController.text);
         if (!shouldProceed) {
           setState(() {
             _isLoading = false;
@@ -138,7 +147,7 @@ This is an automated emergency alert from the Blood Donation App.
 📞 CONTACT: ${_contactController.text.trim()}
 🩸 BLOOD GROUP: $_selectedBloodGroup
 
-📍 LOCATION: $_locationText
+📍 LOCATION: ${_locationController.text}
 📍 GPS Coordinates: ${position.latitude}, ${position.longitude}
 
 🗺️ View Location: $mapLink
@@ -169,7 +178,7 @@ THIS IS A REAL EMERGENCY. PLEASE CONTACT THE USER IMMEDIATELY.
         });
 
         // Show success dialog
-        _showSuccessDialog(_locationText, contacts.length, successCount);
+        _showSuccessDialog(_locationController.text, contacts.length, successCount);
 
       } catch (e) {
         setState(() {
@@ -498,7 +507,7 @@ THIS IS A REAL EMERGENCY. PLEASE CONTACT THE USER IMMEDIATELY.
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        backgroundColor: Colors.red.shade700,
+        backgroundColor: Colors.red.shade900,
         elevation: 0,
         title: const Text(
           'Emergency SOS',
@@ -520,12 +529,12 @@ THIS IS A REAL EMERGENCY. PLEASE CONTACT THE USER IMMEDIATELY.
                     width: 80,
                     height: 80,
                     decoration: BoxDecoration(
-                      color: Colors.red.shade100,
+                      color: Colors.red.shade900,
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       Icons.sos,
-                      color: Colors.red.shade700,
+                      color: Colors.white,
                       size: 40,
                     ),
                   ),
@@ -533,12 +542,12 @@ THIS IS A REAL EMERGENCY. PLEASE CONTACT THE USER IMMEDIATELY.
                 const SizedBox(height: 16),
 
                 // Title
-                const Text(
+                Text(
                   'Emergency Details',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Colors.red,
+                    color: Colors.red.shade900,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -556,10 +565,10 @@ THIS IS A REAL EMERGENCY. PLEASE CONTACT THE USER IMMEDIATELY.
                 // Name Field
                 TextFormField(
                   controller: _nameController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Your Name *',
-                    prefixIcon: Icon(Icons.person, color: Colors.red),
-                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.person, color: Colors.red.shade900),
+                    border: const OutlineInputBorder(),
                     filled: true,
                     fillColor: Colors.white,
                   ),
@@ -576,10 +585,10 @@ THIS IS A REAL EMERGENCY. PLEASE CONTACT THE USER IMMEDIATELY.
                 TextFormField(
                   controller: _contactController,
                   keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Contact Number *',
-                    prefixIcon: Icon(Icons.phone, color: Colors.red),
-                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.phone, color: Colors.red.shade900),
+                    border: const OutlineInputBorder(),
                     filled: true,
                     fillColor: Colors.white,
                   ),
@@ -595,10 +604,10 @@ THIS IS A REAL EMERGENCY. PLEASE CONTACT THE USER IMMEDIATELY.
                 // Blood Group Dropdown
                 DropdownButtonFormField<String>(
                   initialValue: _selectedBloodGroup,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Blood Group *',
-                    prefixIcon: Icon(Icons.bloodtype, color: Colors.red),
-                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.bloodtype, color: Colors.red.shade900),
+                    border: const OutlineInputBorder(),
                     filled: true,
                     fillColor: Colors.white,
                   ),
@@ -623,72 +632,44 @@ THIS IS A REAL EMERGENCY. PLEASE CONTACT THE USER IMMEDIATELY.
                 const SizedBox(height: 16),
 
                 // Location Field
-                Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade400),
-                    borderRadius: BorderRadius.circular(4),
-                    color: Colors.white,
+                TextFormField(
+                  controller: _locationController,
+                  readOnly: true,
+                  decoration: InputDecoration(
+                    labelText: 'Location *',
+                    prefixIcon: Icon(Icons.location_on, color: Colors.red.shade900),
+                    suffixIcon: (_locationController.text.isEmpty ||
+                              _locationController.text == 'Press button to get location' ||
+                              _locationController.text == 'Failed to get location')
+                          ? const Icon(Icons.map, color: Colors.grey)
+                          : null,
+                    border: const OutlineInputBorder(),
+                    filled: true,
+                    fillColor: Colors.white,
+                    hintText: 'Press button to get location',
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Label
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        alignment: Alignment.centerLeft,
-                        child: Row(
-                          children: [
-                            const Icon(Icons.location_on, size: 20, color: Colors.red),
-                            const SizedBox(width: 12),
-                            Text(
-                              'Location *',
-                              style: TextStyle(
-                                color: Colors.grey.shade700,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Divider(height: 1),
-                      // Location Text
-                      Padding(
-                        padding: const EdgeInsets.all(12.0),
-                        child: Text(
-                          _locationText,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: _locationText == 'Press button to get location' ||
-                                    _locationText == 'Failed to get location'
-                                ? Colors.grey.shade500
-                                : Colors.black87,
+                  onTap: _isGettingLocation ? null : _getCurrentLocation,
+                ),
+                const SizedBox(height: 16),
+
+                // Get Location Button
+                ElevatedButton.icon(
+                  onPressed: _isGettingLocation ? null : _getCurrentLocation,
+                  icon: _isGettingLocation
+                      ? const SizedBox(
+                          height: 16,
+                          width: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
-                        ),
-                      ),
-                      // Get Location Button
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: ElevatedButton.icon(
-                          onPressed: _isGettingLocation ? null : _getCurrentLocation,
-                          icon: _isGettingLocation
-                              ? const SizedBox(
-                                  height: 16,
-                                  width: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                  ),
-                                )
-                              : const Icon(Icons.my_location),
-                          label: Text(_isGettingLocation ? 'Getting Location...' : 'Get My Location'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue.shade700,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                          ),
-                        ),
-                      ),
-                    ],
+                        )
+                      : const Icon(Icons.my_location),
+                  label: Text(_isGettingLocation ? 'Getting Location...' : 'Get My Location'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red.shade900,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                 ),
                 const SizedBox(height: 32),
@@ -724,7 +705,7 @@ THIS IS A REAL EMERGENCY. PLEASE CONTACT THE USER IMMEDIATELY.
                 ElevatedButton(
                   onPressed: _isLoading ? null : _sendSOS,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red.shade700,
+                    backgroundColor: Colors.red.shade900,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
@@ -740,16 +721,9 @@ THIS IS A REAL EMERGENCY. PLEASE CONTACT THE USER IMMEDIATELY.
                             valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
-                      : const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.sos, size: 24),
-                            SizedBox(width: 8),
-                            Text(
-                              'SEND EMERGENCY SOS',
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                            ),
-                          ],
+                      : const Text(
+                          'SEND',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                 ),
               ],

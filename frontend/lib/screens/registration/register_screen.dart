@@ -120,13 +120,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Blood Drop Icon
-                  Icon(
-                    Icons.bloodtype,
-                    size: 80,
-                    color: Colors.red[700],
-                  ),
-                  const SizedBox(height: 20),
 
                   // Title
                   const Text(
