@@ -79,17 +79,31 @@ class RegisterView(generics.GenericAPIView):
         Handle user registration POST requests.
         Creates user account, donor profile, and returns authentication tokens.
         """
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            errors = serializer.errors
+            # Get the first error message
+            error_msg = "Registration failed"
+            for field, messages in errors.items():
+                if isinstance(messages, list):
+                    error_msg = messages[0] if messages else "Registration failed"
+                else:
+                    error_msg = messages
+                break
+
+            return create_error_response(
+                message=error_msg,
+                errors=errors,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
         try:
-            serializer = self.get_serializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
             user = serializer.save()
 
-            # Create email verification token (optional but recommended)
+            # Create email verification token
             from .models import EmailVerification
 
             verification = EmailVerification.objects.create(user_id=user.id)
-
-            # TODO: Send actual email here
             logger.info(
                 f"Registration - Verification email for {user.email}: Token = {verification.token}"
             )
@@ -100,6 +114,12 @@ class RegisterView(generics.GenericAPIView):
             return create_api_response(
                 message="User registered successfully.",
                 data={
+                    "user": {
+                        "id": user.id,
+                        "email": user.email,
+                        "full_name": user.full_name,
+                        "phone": user.phone,
+                    },
                     "tokens": {
                         "access": str(refresh.access_token),
                         "refresh": str(refresh),
@@ -108,20 +128,12 @@ class RegisterView(generics.GenericAPIView):
                 status_code=status.HTTP_201_CREATED,
             )
 
-        except serializers.ValidationError as e:
-            logger.warning(f"Registration validation failed: {e.detail}")
-            return create_error_response(
-                message="Registration failed. Please check your input.",
-                errors=e.detail,
-                status_code=status.HTTP_400_BAD_REQUEST,
-            )
-
         except Exception as e:
             logger.error(
                 f"Unexpected error during registration: {str(e)}", exc_info=True
             )
             return create_error_response(
-                message="An unexpected error occurred. Please try again later.",
+                message=f"Registration failed: {str(e)}",
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
@@ -155,6 +167,12 @@ class LoginView(generics.GenericAPIView):
             return create_api_response(
                 message="Login successful",
                 data={
+                    "user": {
+                        "id": user.id,
+                        "email": user.email,
+                        "full_name": user.full_name,
+                        "phone": user.phone,
+                    },
                     "tokens": {
                         "access": str(refresh.access_token),
                         "refresh": str(refresh),

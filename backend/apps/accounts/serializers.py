@@ -164,6 +164,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     Serializer for user registration.
     Creates CustomUser and UserProfile records.
    """
+    email = serializers.EmailField(required=True, help_text="User's email address")
     password = serializers.CharField(
         write_only=True,
         required=True,
@@ -186,6 +187,22 @@ class RegisterSerializer(serializers.ModelSerializer):
             "confirm_password",
         ]
 
+    def validate_email(self, value):
+        """Validate email format and uniqueness"""
+        email = value.strip().lower()
+
+        if not email:
+            raise serializers.ValidationError("Email is required")
+
+        if not re.match(r"^[\w\.-]+@[\w\.-]+\.\w+$", email):
+            raise serializers.ValidationError("Invalid email format")
+
+        # Check if email already exists (case-insensitive)
+        if CustomUser.objects.filter(email__iexact=email).exists():
+            raise serializers.ValidationError("Email already exists. Please use a different email or login.")
+
+        return email
+
     def validate(self, attrs: Dict[str, Any]) -> Dict[str, Any]:
         """Comprehensive validation for user registration"""
         # Validate password confirmation
@@ -196,20 +213,6 @@ class RegisterSerializer(serializers.ModelSerializer):
                     "confirm_password": "Passwords must be identical",
                 }
             )
-
-        # Validate email format and uniqueness
-        email = attrs.get("email", "").strip().lower()
-        if not email:
-            raise serializers.ValidationError({"email": "Email is required"})
-
-        if not re.match(r"^[\w\.-]+@[\w\.-]+\.\w+$", email):
-            raise serializers.ValidationError({"email": "Invalid email format"})
-
-        if CustomUser.objects.filter(email=email).exists():
-            raise serializers.ValidationError(
-                {"email": "A user with this email already exists"}
-            )
-        attrs["email"] = email
 
         # Validate phone number format
         phone = attrs.get("phone", "").strip()
@@ -224,49 +227,31 @@ class RegisterSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data: Dict[str, Any]) -> CustomUser:
-        """Create a new user account with UserProfile"""
-        from django.db import transaction
+        """Create a new user account"""
+        from django.db import transaction, IntegrityError
 
         validated_data.pop("confirm_password")
-
-        # Extract profile fields (blood donation specific)
-        profile_fields = {
-            'gender': validated_data.pop('gender', 'Other'),
-            'province': validated_data.pop('province', 'Punjab'),
-            'district': validated_data.pop('district', 'Lahore'),
-            'local_level': validated_data.pop('local_level', 'Urban'),
-            'date_of_birth': validated_data.pop('date_of_birth', None),
-            'blood_group': validated_data.pop('blood_group', None),
-        }
-
         password = validated_data.pop("password")
-
-        # Clean up empty date_of_birth
-        if not profile_fields['date_of_birth']:
-            profile_fields.pop('date_of_birth')
 
         try:
             with transaction.atomic():
-                # Create CustomUser with the new structure
+                # Create CustomUser
                 user = CustomUser(
                     email=validated_data.get('email'),
                     full_name=validated_data.get('full_name', ''),
                     phone=validated_data.get('phone', ''),
                 )
                 user.set_password(password)
-                user.full_clean()
                 user.save()
 
-                # Create UserProfile with blood donation specific fields
-                UserProfile.objects.create(user=user, **profile_fields)
-
-                # Create donor profile if blood_group is provided
-                if profile_fields.get('blood_group'):
-                    Donor.objects.create(user=user, is_available=True)
-                    logger.info(f"Created new donor account: {user.email}")
-
+                logger.info(f"Created new user account: {user.email}")
                 return user
 
+        except IntegrityError:
+            logger.error(f"Duplicate email attempt: {validated_data.get('email')}")
+            raise serializers.ValidationError(
+                {"email": "A user with this email already exists"}
+            )
         except ValidationError as e:
             logger.error(f"Validation error during user creation: {e.message_dict}")
             raise serializers.ValidationError(e.message_dict)

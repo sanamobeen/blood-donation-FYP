@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'register_page.dart';
-import 'landing_page.dart';
+import 'pages/role_selection_page.dart';
 import 'services/language_service.dart';
 import 'config/api_config.dart';
 import 'forgot_password_page.dart';
@@ -134,9 +134,9 @@ class _LoginPageState extends State<LoginPage> {
             ),
           );
 
-          // Navigate to landing page and clear all navigation stack
+          // Navigate to role selection page and clear all navigation stack
           Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (context) => const LandingPage()),
+            MaterialPageRoute(builder: (context) => const RoleSelectionPage()),
             (route) => false,
           );
         }

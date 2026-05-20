@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'services/language_service.dart';
 import 'utils/mock_data.dart';
 import 'config/api_config.dart';
-import 'landing_page.dart';
+import 'pages/role_selection_page.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -126,25 +126,10 @@ class _RegisterPageState extends State<RegisterPage> {
     });
 
     try {
-      // Convert date format from DD/MM/YYYY to YYYY-MM-DD
-      String formatDate(String date) {
-        if (date.isEmpty) return '';
-        var parts = date.split('/');
-        if (parts.length != 3) return date;
-        return '${parts[2]}-${parts[1]}-${parts[0]}';
-      }
-
-      // Prepare registration data
       final registrationData = {
         'full_name': _nameController.text.trim(),
-        'email': _emailController.text.trim().toLowerCase(),
         'phone': _phoneController.text.trim(),
-        'gender': _selectedGender,
-        'province': _selectedProvince,
-        'district': _selectedDistrict,
-        'local_level': _localLevelController.text.trim(),
-        'date_of_birth': formatDate(_dobController.text),
-        'blood_group': _selectedBloodGroup,
+        'email': _emailController.text.trim().toLowerCase(),
         'password': _passwordController.text,
         'confirm_password': _confirmPasswordController.text,
       };
@@ -195,9 +180,9 @@ class _RegisterPageState extends State<RegisterPage> {
             ),
           );
 
-          // Navigate to landing page and clear all navigation stack
+          // Navigate to role selection page and clear all navigation stack
           Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (context) => const LandingPage()),
+            MaterialPageRoute(builder: (context) => const RoleSelectionPage()),
             (route) => false,
           );
         }
@@ -334,29 +319,8 @@ class _RegisterPageState extends State<RegisterPage> {
 
   // Validate Personal Information card
   bool _validatePersonalInfo() {
-    bool isValid = true;
-    List<String> errors = [];
-
-    // Validate name
-    if (_nameController.text.trim().isEmpty) {
-      errors.add(_selectedLanguage == 'ur' ? 'نام درج کریں' : 'Please enter your name');
-      isValid = false;
-    }
-
-    // Validate gender (has default value, so always valid)
-    // Validate blood group (has default value, so always valid)
-
-    // Validate date of birth
-    if (_dobController.text.trim().isEmpty) {
-      errors.add(_selectedLanguage == 'ur' ? 'تاریخ پیدائش منتخب کریں' : 'Please select date of birth');
-      isValid = false;
-    }
-
-    if (!isValid) {
-      _showValidationError(errors.first);
-    }
-
-    return isValid;
+    // Personal info is optional for registration; proceed to the next step.
+    return true;
   }
 
   // Validate Contact Information card
@@ -370,21 +334,6 @@ class _RegisterPageState extends State<RegisterPage> {
       isValid = false;
     } else if (!_emailController.text.contains('@')) {
       errors.add(_selectedLanguage == 'ur' ? 'درست ای میل درج کریں' : 'Please enter a valid email');
-      isValid = false;
-    }
-
-    // Validate phone
-    if (_phoneController.text.trim().isEmpty) {
-      errors.add(_selectedLanguage == 'ur' ? 'فون نمبر درج کریں' : 'Please enter your phone number');
-      isValid = false;
-    }
-
-    // Validate province (has default, so always valid)
-    // Validate district (has default, so always valid)
-
-    // Validate local level
-    if (_localLevelController.text.trim().isEmpty) {
-      errors.add(_selectedLanguage == 'ur' ? 'مقامی سطح درج کریں' : 'Please enter local level');
       isValid = false;
     }
 
@@ -603,9 +552,6 @@ class _RegisterPageState extends State<RegisterPage> {
               prefixIcon: Icon(Icons.person, color: Colors.red.shade900),
             ),
             validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return _selectedLanguage == 'ur' ? 'براہ کرم نام درج کریں' : 'Please enter your name';
-              }
               return null;
             },
           ),
@@ -694,9 +640,6 @@ class _RegisterPageState extends State<RegisterPage> {
             }
           },
           validator: (value) {
-            if (value == null || value.trim().isEmpty) {
-              return _selectedLanguage == 'ur' ? 'براہ کرم تاریخ پیدائش درج کریں' : 'Please enter your date of birth';
-            }
             return null;
           },
         ),
@@ -784,9 +727,6 @@ class _RegisterPageState extends State<RegisterPage> {
             hintText: _selectedLanguage == 'ur' ? 'مثلاً: جی-7 مارکیز' : 'e.g., G-7 Markaz',
           ),
           validator: (value) {
-            if (value == null || value.trim().isEmpty) {
-              return _selectedLanguage == 'ur' ? 'براہ کرم مقامی سطح درج کریں' : 'Please enter your local level';
-            }
             return null;
           },
         ),
@@ -847,9 +787,15 @@ class _RegisterPageState extends State<RegisterPage> {
               return _getFieldError('phone');
             }
 
-            // Then check client-side validation
             if (value == null || value.trim().isEmpty) {
-              return _selectedLanguage == 'ur' ? 'براہ کرم فون نمبر درج کریں' : 'Please enter your phone number';
+              return null;
+            }
+
+            final cleaned = value.trim().replaceAll(RegExp(r'[\s\-\(\)]'), '');
+            if (!RegExp(r'^\+?\d{6,15} ?').hasMatch(cleaned)) {
+              return _selectedLanguage == 'ur'
+                  ? 'براہ کرم درست فون نمبر درج کریں'
+                  : 'Please enter a valid phone number';
             }
             return null;
           },
