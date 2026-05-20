@@ -396,20 +396,6 @@ class _RegisterPageState extends State<RegisterPage> {
               Center(
                 child: Column(
                   children: [
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: Colors.red.shade900,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.bloodtype,
-                        color: Colors.white,
-                        size: 40,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
                     Text(
                       _selectedLanguage == 'ur' ? 'رجسٹر کریں اور زندگیاں بچائیں' : 'Register and Save Lives',
                       style: TextStyle(

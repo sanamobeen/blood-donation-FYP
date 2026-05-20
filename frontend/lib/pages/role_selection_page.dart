@@ -43,7 +43,7 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
 
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => SimpleRegistrationPage(initialRole: role)),
+      MaterialPageRoute(builder: (context) => SimpleRegistrationPage(role: role)),
     );
   }
 
@@ -107,7 +107,7 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
               // Navigate to simple registration page with role context
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => SimpleRegistrationPage(initialRole: role)),
+                MaterialPageRoute(builder: (context) => SimpleRegistrationPage(role: role)),
               );
             },
             style: ElevatedButton.styleFrom(
