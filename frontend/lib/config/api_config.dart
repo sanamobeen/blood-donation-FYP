@@ -6,10 +6,10 @@ class ApiConfig {
   static const String currentPlatform = 'emulator';  // ← CHANGE THIS!
 
   // Base URL configuration
-  static const String emulatorUrl = 'http://10.0.2.2:8001';      // Android Emulator
-  static const String deviceUrl = 'http://192.168.18.87:8001';    // Physical Phone
-  static const String localUrl = 'http://localhost:8001';         // Desktop/Web
-  static const String iosUrl = 'http://127.0.0.1:8001';          // iOS Simulator
+  static const String emulatorUrl = 'http://10.0.2.2:8000';      // Android Emulator
+  static const String deviceUrl = 'http://192.168.18.87:8000';    // Physical Phone
+  static const String localUrl = 'http://localhost:8000';         // Desktop/Web
+  static const String iosUrl = 'http://127.0.0.1:8000';          // iOS Simulator
 
   // Auto-selects URL based on currentPlatform
   static String get baseUrl {

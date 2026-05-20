@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../home_screen.dart';
+import '../../pages/role_selection_page.dart';
 import '../../config/api_config.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -62,11 +62,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
         await prefs.setString('refresh_token', responseData['data']['tokens']['refresh']);
         await prefs.setString('user_email', _emailController.text.trim());
 
-        // Navigate to home screen on success
+        // Navigate to role selection screen on success
         if (mounted) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const HomeScreen()),
+            MaterialPageRoute(builder: (context) => const RoleSelectionPage()),
           );
         }
 
