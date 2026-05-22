@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'landing_page.dart';
 import 'edit_profile_page.dart';
 import 'schedule_donation_page.dart';
 import 'services/auth_service.dart';
+import 'login_screen.dart';
 
 class ProfilePage extends StatelessWidget {
   ProfilePage({super.key});
@@ -534,11 +534,11 @@ class ProfilePage extends StatelessWidget {
                 // Perform logout
                 await AuthService.logout();
 
-                // Navigate to landing page and clear all navigation stack
+                // Navigate to login page and clear all navigation stack
                 if (context.mounted) {
                   Navigator.pushAndRemoveUntil(
                     context,
-                    MaterialPageRoute(builder: (context) => const LandingPage()),
+                    MaterialPageRoute(builder: (context) => const LoginScreen()),
                     (route) => false,
                   );
                 }

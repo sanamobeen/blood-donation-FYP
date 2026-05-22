@@ -8,7 +8,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from django.core.mail import send_mail
 from django.conf import settings
-from .models import MyUser, Donor
+from .models import CustomUser, UserProfile, Donor
 from .serializers import (
     RegisterSerializer,
     LoginSerializer,
@@ -79,17 +79,31 @@ class RegisterView(generics.GenericAPIView):
         Handle user registration POST requests.
         Creates user account, donor profile, and returns authentication tokens.
         """
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            errors = serializer.errors
+            # Get the first error message
+            error_msg = "Registration failed"
+            for field, messages in errors.items():
+                if isinstance(messages, list):
+                    error_msg = messages[0] if messages else "Registration failed"
+                else:
+                    error_msg = messages
+                break
+
+            return create_error_response(
+                message=error_msg,
+                errors=errors,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
         try:
-            serializer = self.get_serializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
             user = serializer.save()
 
-            # Create email verification token (optional but recommended)
+            # Create email verification token
             from .models import EmailVerification
 
             verification = EmailVerification.objects.create(user_id=user.id)
-
-            # TODO: Send actual email here
             logger.info(
                 f"Registration - Verification email for {user.email}: Token = {verification.token}"
             )
@@ -98,9 +112,14 @@ class RegisterView(generics.GenericAPIView):
             refresh = RefreshToken.for_user(user)
 
             return create_api_response(
-                message="User registered successfully. Please check your email to verify your account.",
+                message="User registered successfully.",
                 data={
-                    "user": UserSerializer(user).data,
+                    "user": {
+                        "id": user.id,
+                        "email": user.email,
+                        "full_name": user.full_name,
+                        "phone": user.phone,
+                    },
                     "tokens": {
                         "access": str(refresh.access_token),
                         "refresh": str(refresh),
@@ -109,20 +128,12 @@ class RegisterView(generics.GenericAPIView):
                 status_code=status.HTTP_201_CREATED,
             )
 
-        except serializers.ValidationError as e:
-            logger.warning(f"Registration validation failed: {e.detail}")
-            return create_error_response(
-                message="Registration failed. Please check your input.",
-                errors=e.detail,
-                status_code=status.HTTP_400_BAD_REQUEST,
-            )
-
         except Exception as e:
             logger.error(
                 f"Unexpected error during registration: {str(e)}", exc_info=True
             )
             return create_error_response(
-                message="An unexpected error occurred. Please try again later.",
+                message=f"Registration failed: {str(e)}",
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
@@ -156,7 +167,12 @@ class LoginView(generics.GenericAPIView):
             return create_api_response(
                 message="Login successful",
                 data={
-                    "user": UserSerializer(user).data,
+                    "user": {
+                        "id": user.id,
+                        "email": user.email,
+                        "full_name": user.full_name,
+                        "phone": user.phone,
+                    },
                     "tokens": {
                         "access": str(refresh.access_token),
                         "refresh": str(refresh),
@@ -212,7 +228,10 @@ class ProfileView(generics.RetrieveUpdateAPIView):
         return UserSerializer
 
     def get_object(self):
-        return self.request.user
+        # Get or create user profile
+        user = self.request.user
+        UserProfile.objects.get_or_create(user=user)
+        return user
 
     def patch(self, request, *args, **kwargs):
         """Handle partial updates for user profile"""
@@ -245,7 +264,7 @@ class UpdateDonorProfileView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         try:
-            return Donor.objects.get(user_id=self.request.user.id)
+            return Donor.objects.get(user=self.request.user)
         except Donor.DoesNotExist:
             return Response(
                 {"error": "You are not registered as a donor"},
@@ -282,12 +301,11 @@ class SendVerificationEmailView(generics.GenericAPIView):
             user = request.user
             # Delete any existing unused verification tokens
             from .models import EmailVerification
-            import uuid
 
-            EmailVerification.objects.filter(user_id=user.id, is_used=False).delete()
+            EmailVerification.objects.filter(user=user, is_used=False).delete()
 
             # Create new verification token
-            verification = EmailVerification.objects.create(user_id=user.id)
+            verification = EmailVerification.objects.create(user=user)
 
             # TODO: Send actual email here
             # For now, return the token in response (for testing only)
@@ -339,8 +357,7 @@ class VerifyEmailView(generics.GenericAPIView):
                 )
 
             # Mark user as active and verification as used
-            from .models import MyUser
-            user = MyUser.objects.get(id=verification.user_id)
+            user = verification.user
             user.is_active = True
             user.save()
             verification.is_used = True
@@ -383,15 +400,15 @@ class ForgotPasswordView(generics.GenericAPIView):
             email = serializer.validated_data["email"]
 
             # Get user (serializer already validated email exists)
-            user = MyUser.objects.get(email=email)
+            user = CustomUser.objects.get(email=email)
 
             # Delete any existing unused reset tokens for this user
             from .models import PasswordReset
 
-            PasswordReset.objects.filter(user_id=user.id, is_used=False).delete()
+            PasswordReset.objects.filter(user=user, is_used=False).delete()
 
             # Create new reset token
-            reset = PasswordReset.objects.create(user_id=user.id)
+            reset = PasswordReset.objects.create(user=user)
 
             # Log the token for development/testing
             logger.info(
@@ -403,8 +420,9 @@ class ForgotPasswordView(generics.GenericAPIView):
                 reset_link = f"{settings.FRONTEND_URL}/reset-password?email={email}&token={reset.token}"
 
                 subject = "Password Reset Request - Blood Donation System"
+                full_name = user.get_full_name()
                 message = f"""
-Hello {user.full_name or 'User'},
+Hello {full_name or 'User'},
 
 You recently requested to reset your password for your Blood Donation account.
 

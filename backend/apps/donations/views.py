@@ -40,7 +40,7 @@ class MyDonationsView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Donation.objects.filter(donor_id=self.request.user.id)
+        return Donation.objects.filter(donor=self.request.user)
 
 
 class AcceptDonationView(generics.UpdateAPIView):
@@ -56,7 +56,7 @@ class AcceptDonationView(generics.UpdateAPIView):
             )
 
         # Check if the current user is the donor
-        if donation.donor_id != request.user.id:
+        if donation.donor != request.user:
             return Response(
                 {"error": "You can only accept your own donation requests"},
                 status=status.HTTP_403_FORBIDDEN,

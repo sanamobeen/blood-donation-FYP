@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'register_page.dart';
-import 'landing_page.dart';
+import 'pages/role_selection_page.dart';
 import 'services/language_service.dart';
 import 'config/api_config.dart';
 import 'forgot_password_page.dart';
@@ -57,6 +57,25 @@ class _LoginPageState extends State<LoginPage> {
   void initState() {
     super.initState();
     _selectedLanguage = _languageProvider.currentLanguage;
+    _loadSavedCredentials();
+  }
+
+  // Load saved credentials if Remember Me was checked
+  void _loadSavedCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    final rememberMe = prefs.getBool('remember_me') ?? false;
+    final savedEmail = prefs.getString('saved_email') ?? '';
+
+    print('DEBUG: Remember Me = $rememberMe');
+    print('DEBUG: Saved Email = $savedEmail');
+
+    // Only load the email, but don't auto-check the checkbox
+    if (savedEmail.isNotEmpty) {
+      setState(() {
+        _emailController.text = savedEmail;
+      });
+      print('DEBUG: Email loaded from saved credentials');
+    }
   }
 
   @override
@@ -120,6 +139,17 @@ class _LoginPageState extends State<LoginPage> {
         await prefs.setString('user_name', responseData['data']['user']['full_name']);
         await prefs.setBool('is_logged_in', true);
 
+        // Handle Remember Me functionality
+        if (_rememberMe) {
+          // Save email for next time
+          await prefs.setBool('remember_me', true);
+          await prefs.setString('saved_email', _emailController.text.trim().toLowerCase());
+        } else {
+          // Clear saved credentials
+          await prefs.remove('remember_me');
+          await prefs.remove('saved_email');
+        }
+
         if (mounted) {
           setState(() {
             _isLoggingIn = false;
@@ -134,9 +164,9 @@ class _LoginPageState extends State<LoginPage> {
             ),
           );
 
-          // Navigate to landing page and clear all navigation stack
+          // Navigate to role selection page and clear all navigation stack
           Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (context) => const LandingPage()),
+            MaterialPageRoute(builder: (context) => const RoleSelectionPage()),
             (route) => false,
           );
         }

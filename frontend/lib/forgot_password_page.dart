@@ -18,7 +18,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final String _selectedLanguage = 'en';
 
   // Production mode - set to false for production
-  static const bool _isDevelopmentMode = true;
+  static const bool _isDevelopmentMode = false;
 
   @override
   void dispose() {
@@ -123,20 +123,19 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 ),
               );
             } else {
-              // Production mode: Clear email and show simple success message
-              _emailController.clear();
+              // Production mode: Directly navigate to reset password page
+              final String? token = responseData['data']?['token'];
 
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    _selectedLanguage == 'ur'
-                        ? 'پاسورڈ ری سیٹ لنک آپ کے ای میل پر بھیج دیا گیا ہے۔ براہ کرم اپنے ای میل کو چیک کریں'
-                        : 'Password reset link has been sent to your email. Please check your email to reset your password.',
+              if (mounted) {
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(
+                    builder: (context) => ResetPasswordPage(
+                      email: _emailController.text.trim(),
+                      token: token,
+                    ),
                   ),
-                  backgroundColor: Colors.green,
-                  duration: const Duration(seconds: 5),
-                ),
-              );
+                );
+              }
             }
           }
         } else {

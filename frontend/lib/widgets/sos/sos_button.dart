@@ -77,11 +77,11 @@ class _SOSButtonState extends State<SOSButton> {
         }
 
         // Show confirmation dialog
-        final confirmed = await _showConfirmationDialog();
+        final emergencyData = await _showConfirmationDialog();
         if (!mounted) return;
 
-        if (confirmed == true) {
-          await _triggerSOS();
+        if (emergencyData != null) {
+          await _triggerSOS(emergencyData);
         } else {
           setState(() {
             _isPressed = false;
@@ -166,114 +166,190 @@ class _SOSButtonState extends State<SOSButton> {
     );
   }
 
-  Future<bool?> _showConfirmationDialog() {
-    return showDialog<bool>(
+  Future<Map<String, String>?> _showConfirmationDialog() {
+    final nameController = TextEditingController();
+    final contactController = TextEditingController();
+    final bloodRequestController = TextEditingController();
+
+    return showDialog<Map<String, String>>(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Row(
-            children: [
-              Icon(Icons.warning, color: Colors.red.shade700, size: 28),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Text(
-                  "Confirm Emergency SOS",
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
               ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "You are about to trigger an emergency SOS alert.",
-                style: TextStyle(fontSize: 14),
+              title: Row(
+                children: [
+                  Icon(Icons.emergency, color: Colors.red.shade700, size: 28),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      "Emergency Details",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.red.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.red.shade200),
-                ),
+              content: SingleChildScrollView(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Row(
-                      children: [
-                        Icon(Icons.gavel, color: Colors.red.shade700, size: 16),
-                        const SizedBox(width: 8),
-                        Text(
-                          "LEGAL WARNING",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.red.shade700,
-                            fontSize: 12,
+                    const Text(
+                      "Please provide your emergency information:",
+                      style: TextStyle(fontSize: 13, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Name field
+                    TextField(
+                      controller: nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Your Name *',
+                        prefixIcon: Icon(Icons.person),
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Contact Number field
+                    TextField(
+                      controller: contactController,
+                      keyboardType: TextInputType.phone,
+                      decoration: const InputDecoration(
+                        labelText: 'Contact Number *',
+                        prefixIcon: Icon(Icons.phone),
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Blood Request field
+                    TextField(
+                      controller: bloodRequestController,
+                      maxLines: 2,
+                      decoration: const InputDecoration(
+                        labelText: 'Blood Request Details *',
+                        prefixIcon: Icon(Icons.description),
+                        border: OutlineInputBorder(),
+                        hintText: 'Additional details (e.g., "2 units needed, urgent")',
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Legal warning (compact)
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade50,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: Colors.orange.shade200),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.warning, color: Colors.orange.shade700, size: 14),
+                              const SizedBox(width: 6),
+                              Text(
+                                "WARNING",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.orange.shade700,
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      "Misuse of emergency alerts is a criminal offense. False alerts may result in:",
-                      style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      "• Legal prosecution and fines\n• Emergency service blacklisting\n• Criminal charges for public nuisance",
-                      style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+                          const SizedBox(height: 4),
+                          Text(
+                            "False emergency alerts are a criminal offense",
+                            style: TextStyle(fontSize: 10, color: Colors.grey.shade700),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
-              Text(
-                "Your location will be shared with emergency contacts.",
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  _isPressed = false;
-                  _countdown = 3;
-                });
-                Navigator.of(dialogContext).pop(false);
-              },
-              child: Text(
-                "Cancel",
-                style: TextStyle(color: Colors.grey.shade700),
-              ),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red.shade700,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _isPressed = false;
+                      _countdown = 3;
+                    });
+                    nameController.dispose();
+                    contactController.dispose();
+                    bloodRequestController.dispose();
+                    Navigator.of(dialogContext).pop(null);
+                  },
+                  child: Text(
+                    "Cancel",
+                    style: TextStyle(color: Colors.grey.shade700),
+                  ),
                 ),
-              ),
-              onPressed: () {
-                Navigator.of(dialogContext).pop(true);
-              },
-              child: const Text("CONFIRM SOS"),
-            ),
-          ],
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red.shade700,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  onPressed: () {
+                    // Validate fields
+                    if (nameController.text.trim().isEmpty) {
+                      ScaffoldMessenger.of(dialogContext).showSnackBar(
+                        const SnackBar(content: Text('Please enter your name'), backgroundColor: Colors.red),
+                      );
+                      return;
+                    }
+                    if (contactController.text.trim().isEmpty) {
+                      ScaffoldMessenger.of(dialogContext).showSnackBar(
+                        const SnackBar(content: Text('Please enter your contact number'), backgroundColor: Colors.red),
+                      );
+                      return;
+                    }
+                    if (bloodRequestController.text.trim().isEmpty) {
+                      ScaffoldMessenger.of(dialogContext).showSnackBar(
+                        const SnackBar(content: Text('Please describe your blood request'), backgroundColor: Colors.red),
+                      );
+                      return;
+                    }
+
+                    // Create emergency data map
+                    final emergencyData = {
+                      'name': nameController.text.trim(),
+                      'contact': contactController.text.trim(),
+                      'bloodRequest': bloodRequestController.text.trim(),
+                    };
+
+                    // Clean up controllers
+                    nameController.dispose();
+                    contactController.dispose();
+                    bloodRequestController.dispose();
+
+                    // Close dialog and return emergency data
+                    Navigator.of(dialogContext).pop(emergencyData);
+                  },
+                  child: const Text("SEND SOS"),
+                ),
+              ],
+            );
+          },
         );
       },
     );
   }
 
-  Future<void> _triggerSOS() async {
+  Future<void> _triggerSOS(Map<String, String> emergencyData) async {
     setState(() {
       _isLoading = true;
     });
@@ -324,6 +400,10 @@ class _SOSButtonState extends State<SOSButton> {
 🚨 EMERGENCY SOS ALERT 🚨
 
 This is an automated emergency alert from the Blood Donation App.
+
+👤 PERSON IN NEED: ${emergencyData['name']}
+📞 CONTACT: ${emergencyData['contact']}
+🩸 BLOOD REQUEST: ${emergencyData['bloodRequest']}
 
 📍 LOCATION: $address
 📍 GPS Coordinates: ${position.latitude}, ${position.longitude}
