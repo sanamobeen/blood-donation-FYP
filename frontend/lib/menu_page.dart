@@ -5,7 +5,7 @@ import 'feedback_page.dart';
 import 'emergency_contacts_page.dart';
 import 'emergency_sos_form_page.dart';
 import 'services/language_service.dart';
-import 'role_selection_page.dart';
+import 'pages/role_selection_page.dart';
 
 class MenuPage extends StatefulWidget {
   const MenuPage({super.key});
