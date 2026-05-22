@@ -196,19 +196,19 @@ class BloodRequestSerializer(serializers.ModelSerializer):
     def get_user_email(self, obj):
         """Get user email from related user"""
         try:
-            from apps.accounts.models import MyUser
-            user = MyUser.objects.get(id=obj.user_id)
+            from apps.accounts.models import CustomUser
+            user = CustomUser.objects.get(id=obj.user_id)
             return user.email
-        except MyUser.DoesNotExist:
+        except CustomUser.DoesNotExist:
             return None
 
     def get_user_name(self, obj):
         """Get user name from related user"""
         try:
-            from apps.accounts.models import MyUser
-            user = MyUser.objects.get(id=obj.user_id)
+            from apps.accounts.models import CustomUser
+            user = CustomUser.objects.get(id=obj.user_id)
             return user.full_name or user.email
-        except MyUser.DoesNotExist:
+        except CustomUser.DoesNotExist:
             return None
 
     def create(self, validated_data):

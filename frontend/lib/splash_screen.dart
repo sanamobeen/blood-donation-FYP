@@ -20,30 +20,13 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkFirstTimeAndNavigate() async {
-    final prefs = await SharedPreferences.getInstance();
-    final bool isFirstTime = prefs.getBool('isFirstTime') ?? true;
-
-    // Mark as not first time for next launch
-    if (isFirstTime) {
-      await prefs.setBool('isFirstTime', false);
-    }
-
-    // Wait for 3 seconds to show the splash screen
-    await Future.delayed(const Duration(seconds: 3));
+    // Wait for 2 seconds to show the splash screen
+    await Future.delayed(const Duration(seconds: 2));
 
     if (mounted) {
-      // Navigate to quick registration page and remove splash screen from stack
       Navigator.of(context).pushReplacement(
-        PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) =>
-              const QuickRegistrationPage(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return FadeTransition(
-              opacity: animation,
-              child: child,
-            );
-          },
-          transitionDuration: const Duration(milliseconds: 800),
+        MaterialPageRoute(
+          builder: (context) => const QuickRegistrationPage(),
         ),
       );
     }

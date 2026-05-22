@@ -145,7 +145,8 @@ class _LoginScreenState extends State<LoginScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
           child: Form(
             key: _formKey,
-            child: Column(
+            child: SingleChildScrollView(
+              child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 40),
@@ -347,7 +348,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     const Text(
                       'Don\'t have an account? ',
-                      style: TextStyle(fontSize: 14, color: Colors.white70),
+                      style: const TextStyle(fontSize: 14, color: Colors.black54),
                     ),
                     TextButton(
                       onPressed: () {
@@ -369,7 +370,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Text(
                         'Register',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: Colors.red[700],
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
                         ),
@@ -379,6 +380,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ],
             ),
+          ),
           ),
         ),
       ),
