@@ -12,6 +12,7 @@ from .views import (
     ForgotPasswordView,
     ResetPasswordView,
 )
+from .views_donor_search import find_donors_nearby, donor_search_filters
 
 urlpatterns = [
     path("register/", RegisterView.as_view(), name="register"),
@@ -26,4 +27,7 @@ urlpatterns = [
     path("verify/", VerifyEmailView.as_view(), name="verify_email"),
     path("forgot-password/", ForgotPasswordView.as_view(), name="forgot_password"),
     path("reset-password/", ResetPasswordView.as_view(), name="reset_password"),
+    # Donor search endpoints
+    path("donors/nearby/", find_donors_nearby, name="find_donors_nearby"),
+    path("donors/filters/", donor_search_filters, name="donor_search_filters"),
 ]

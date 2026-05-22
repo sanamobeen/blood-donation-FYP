@@ -222,6 +222,22 @@ class UserProfile(models.Model):
         verbose_name="Blood Group",
         help_text="User's blood group",
     )
+    latitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        blank=True,
+        null=True,
+        verbose_name="Latitude",
+        help_text="GPS latitude coordinate"
+    )
+    longitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        blank=True,
+        null=True,
+        verbose_name="Longitude",
+        help_text="GPS longitude coordinate"
+    )
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name="Created At",
@@ -241,6 +257,7 @@ class UserProfile(models.Model):
             models.Index(fields=["user"]),
             models.Index(fields=["blood_group"]),
             models.Index(fields=["created_at"]),
+            models.Index(fields=["latitude", "longitude"]),
         ]
 
     def __str__(self) -> str:
