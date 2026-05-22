@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/donor_model.dart';
 
 class DonorCard extends StatelessWidget {
@@ -11,21 +12,18 @@ class DonorCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isEligible = donor.isEligibleToDonate;
-
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: isDark ? Colors.grey.shade800 : Colors.white,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: _getBloodGroupColor(donor.bloodGroup).withValues(alpha: 0.3),
+          color: _getBloodGroupColor(donor.bloodGroup).withOpacity(0.3),
           width: 2,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -34,11 +32,11 @@ class DonorCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with blood group and status
+          // Header with blood group and distance
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: _getBloodGroupColor(donor.bloodGroup).withValues(alpha: 0.1),
+              color: _getBloodGroupColor(donor.bloodGroup).withOpacity(0.1),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(14),
                 topRight: Radius.circular(14),
@@ -46,7 +44,7 @@ class DonorCard extends StatelessWidget {
             ),
             child: Row(
               children: [
-                // Avatar
+                // Avatar with initial
                 Container(
                   width: 50,
                   height: 50,
@@ -56,7 +54,7 @@ class DonorCard extends StatelessWidget {
                   ),
                   child: Center(
                     child: Text(
-                      donor.name[0],
+                      donor.name.isNotEmpty ? donor.name[0].toUpperCase() : '?',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 24,
@@ -66,6 +64,7 @@ class DonorCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
+
                 // Name and blood group
                 Expanded(
                   child: Column(
@@ -73,10 +72,10 @@ class DonorCard extends StatelessWidget {
                     children: [
                       Text(
                         donor.name,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : Colors.black87,
+                          color: Colors.black87,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -108,10 +107,10 @@ class DonorCard extends StatelessWidget {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.green.withValues(alpha: 0.2),
+                                color: Colors.green.withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: Colors.green.withValues(alpha: 0.5),
+                                  color: Colors.green.withOpacity(0.5),
                                   width: 1,
                                 ),
                               ),
@@ -142,24 +141,24 @@ class DonorCard extends StatelessWidget {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.orange.withValues(alpha: 0.2),
+                                color: Colors.orange.withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: Colors.orange.withValues(alpha: 0.5),
+                                  color: Colors.orange.withOpacity(0.5),
                                   width: 1,
                                 ),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(
-                                    isEligible ? Icons.schedule : Icons.block,
+                                  const Icon(
+                                    Icons.block,
                                     size: 12,
                                     color: Colors.orange,
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    isEligible ? 'Unavailable' : 'Not Eligible',
+                                    'Unavailable',
                                     style: TextStyle(
                                       color: Colors.orange.shade700,
                                       fontSize: 11,
@@ -174,15 +173,16 @@ class DonorCard extends StatelessWidget {
                     ],
                   ),
                 ),
+
                 // Distance badge
                 if (donor.distance != null)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.blue.withValues(alpha: 0.1),
+                      color: Colors.blue.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: Colors.blue.withValues(alpha: 0.3),
+                        color: Colors.blue.withOpacity(0.3),
                         width: 1,
                       ),
                     ),
@@ -218,31 +218,13 @@ class DonorCard extends StatelessWidget {
               children: [
                 // Location row
                 _buildInfoRow(
-                  isDark,
                   Icons.location_on,
                   'Location',
                   '${donor.localLevel}, ${donor.district}',
                 ),
                 const SizedBox(height: 12),
-                // Last donation row
-                _buildInfoRow(
-                  isDark,
-                  Icons.calendar_today,
-                  'Last Donation',
-                  '${donor.lastDonationDate.day}/${donor.lastDonationDate.month}/${donor.lastDonationDate.year}',
-                ),
-                const SizedBox(height: 12),
-                // Total donations row
-                _buildInfoRow(
-                  isDark,
-                  Icons.bloodtype,
-                  'Total Donations',
-                  '${donor.totalDonations} times',
-                ),
-                const SizedBox(height: 12),
                 // Phone row
                 _buildInfoRow(
-                  isDark,
                   Icons.phone,
                   'Contact',
                   donor.phone,
@@ -255,7 +237,7 @@ class DonorCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isDark ? Colors.grey.shade800 : Colors.grey.shade50,
+              color: Colors.grey.shade50,
               borderRadius: const BorderRadius.only(
                 bottomLeft: Radius.circular(14),
                 bottomRight: Radius.circular(14),
@@ -269,15 +251,7 @@ class DonorCard extends StatelessWidget {
                     Icons.call,
                     'Call',
                     Colors.green,
-                    () {
-                      // Future: Implement actual call functionality using url_launcher
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Calling ${donor.phone}...'),
-                          duration: const Duration(seconds: 2),
-                        ),
-                      );
-                    },
+                    () => _makeCall(donor.phone),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -287,15 +261,17 @@ class DonorCard extends StatelessWidget {
                     Icons.message,
                     'Message',
                     Colors.blue,
-                    () {
-                      // Future: Implement actual message functionality using SMS/email
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Messaging ${donor.name}...'),
-                          duration: const Duration(seconds: 2),
-                        ),
-                      );
-                    },
+                    () => _sendMessage(donor.phone),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildActionButton(
+                    context,
+                    Icons.directions,
+                    'Navigate',
+                    Colors.purple,
+                    () => _openMaps(donor.latitude, donor.longitude),
                   ),
                 ),
               ],
@@ -307,7 +283,6 @@ class DonorCard extends StatelessWidget {
   }
 
   Widget _buildInfoRow(
-    bool isDark,
     IconData icon,
     String label,
     String value,
@@ -331,9 +306,9 @@ class DonorCard extends StatelessWidget {
         Expanded(
           child: Text(
             value,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 13,
-              color: isDark ? Colors.white : Colors.black87,
+              color: Colors.black87,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -355,10 +330,10 @@ class DonorCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
+          color: color.withOpacity(0.1),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: color.withValues(alpha: 0.3),
+            color: color.withOpacity(0.3),
             width: 1,
           ),
         ),
@@ -397,6 +372,27 @@ class DonorCard extends StatelessWidget {
         return Colors.red;
       default:
         return Colors.grey;
+    }
+  }
+
+  Future<void> _makeCall(String phone) async {
+    final uri = Uri(scheme: 'tel', path: phone);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
+  }
+
+  Future<void> _sendMessage(String phone) async {
+    final uri = Uri(scheme: 'sms', path: phone);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
+  }
+
+  Future<void> _openMaps(double lat, double lng) async {
+    final uri = Uri.parse('https://www.google.com/maps?q=$lat,$lng');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
 }

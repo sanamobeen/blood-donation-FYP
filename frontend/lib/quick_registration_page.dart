@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
-import 'emergency_sos_form_page.dart';
 import 'services/auth_service.dart';
 
 class QuickRegistrationPage extends StatefulWidget {
@@ -313,46 +312,6 @@ class _QuickRegistrationPageState extends State<QuickRegistrationPage> {
                           'Create Account',
                           style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                         ),
-                ),
-                const SizedBox(height: 8),
-
-                // Urgent/Emergency button
-                ElevatedButton(
-                  onPressed: () {
-                    // Navigate to emergency SOS form page for urgent blood request
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (context) => const EmergencySOSFormPage()),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red[700],
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    elevation: 2,
-                    minimumSize: const Size.fromHeight(44),
-                  ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.emergency,
-                        color: Colors.white,
-                        size: 18,
-                      ),
-                      SizedBox(width: 8),
-                      Text(
-                        'Urgent Blood Request',
-                        style: TextStyle(
-                          fontSize: 15,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
                 const SizedBox(height: 8),
 

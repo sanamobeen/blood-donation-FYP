@@ -4,6 +4,7 @@ import 'role_selection_page.dart';
 import 'quick_registration_page.dart';
 import 'emergency_sos_form_page.dart';
 import 'forgot_password_page.dart';
+import 'donor_search_page.dart';
 import 'services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -305,9 +306,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 // Urgent Blood Request button
                 ElevatedButton(
                   onPressed: () {
-                    // Navigate to emergency SOS form page for urgent blood request
+                    // Navigate to donor search page for urgent blood request
                     Navigator.of(context).push(
-                      MaterialPageRoute(builder: (context) => const EmergencySOSFormPage()),
+                      MaterialPageRoute(builder: (context) => const DonorSearchPage()),
                     );
                   },
                   style: ElevatedButton.styleFrom(
