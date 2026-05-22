@@ -4,6 +4,9 @@ import '../login_page.dart';
 import '../simple_registration_page.dart';
 import '../services/blood_request_service.dart';
 import '../find_donor.dart';
+import 'patient_landing_page.dart';
+import 'donor_dashboard_page.dart';
+import '../../blood_donor_home.dart';
 
 class RoleSelectionPage extends StatefulWidget {
   const RoleSelectionPage({super.key});
@@ -66,6 +69,16 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> {
   }
 
   Future<void> _checkLoginAndNavigate(String role) async {
+    // For patients, always show the patient landing page
+    if (role == 'patient') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const PatientLandingPage()),
+      );
+      return;
+    }
+
+    // For donors, check login and proceed normally
     final prefs = await SharedPreferences.getInstance();
     final isLoggedIn = prefs.getBool('is_logged_in') ?? false;
 
