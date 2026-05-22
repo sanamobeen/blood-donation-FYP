@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'role_selection_page.dart';
 import 'quick_registration_page.dart';
 import 'emergency_sos_form_page.dart';
+import 'forgot_password_page.dart';
 import 'services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -18,6 +20,31 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _isLoading = false;
   bool _obscurePassword = true;
+  bool _rememberMe = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedCredentials();
+  }
+
+  // Load saved credentials if Remember Me was checked
+  void _loadSavedCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    final rememberMe = prefs.getBool('remember_me') ?? false;
+    final savedEmail = prefs.getString('saved_email') ?? '';
+
+    print('DEBUG LoginScreen: Remember Me = $rememberMe');
+    print('DEBUG LoginScreen: Saved Email = $savedEmail');
+
+    // Only load the email, but don't auto-check the checkbox
+    if (savedEmail.isNotEmpty) {
+      setState(() {
+        _emailController.text = savedEmail;
+      });
+      print('DEBUG LoginScreen: Email loaded from saved credentials');
+    }
+  }
 
   @override
   void dispose() {
@@ -45,6 +72,18 @@ class _LoginScreenState extends State<LoginScreen> {
 
         if (mounted) {
           if (result.success) {
+            // Handle Remember Me functionality
+            final prefs = await SharedPreferences.getInstance();
+            if (_rememberMe) {
+              // Save email for next time
+              await prefs.setBool('remember_me', true);
+              await prefs.setString('saved_email', _emailController.text.trim().toLowerCase());
+            } else {
+              // Clear saved credentials
+              await prefs.remove('remember_me');
+              await prefs.remove('saved_email');
+            }
+
             // Show success message
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -190,21 +229,46 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 12),
 
-                // Forgot password link
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () {
-                      // TODO: Implement forgot password functionality
-                    },
-                    child: Text(
-                      'Forgot Password?',
-                      style: TextStyle(
-                        color: Colors.red[700],
-                        fontSize: 14,
+                // Remember Me & Forgot Password Row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Remember Me Checkbox
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: _rememberMe,
+                          onChanged: (value) {
+                            setState(() {
+                              _rememberMe = value ?? false;
+                            });
+                          },
+                          activeColor: Colors.red[700],
+                        ),
+                        const Text(
+                          'Remember Me',
+                          style: TextStyle(fontSize: 14),
+                        ),
+                      ],
+                    ),
+
+                    // Forgot password link
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const ForgotPasswordPage()),
+                        );
+                      },
+                      child: Text(
+                        'Forgot Password?',
+                        style: TextStyle(
+                          color: Colors.red[700],
+                          fontSize: 14,
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
                 const SizedBox(height: 20),
 
