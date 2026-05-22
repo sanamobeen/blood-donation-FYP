@@ -190,6 +190,8 @@ class AuthService {
       await prefs.remove('refresh_token');
       await prefs.remove('user_email');
       await prefs.remove('user_name');
+      await prefs.remove('remember_me');
+      await prefs.remove('saved_email');
       await prefs.setBool('is_logged_in', false);
 
       return true;

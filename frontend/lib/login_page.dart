@@ -57,6 +57,25 @@ class _LoginPageState extends State<LoginPage> {
   void initState() {
     super.initState();
     _selectedLanguage = _languageProvider.currentLanguage;
+    _loadSavedCredentials();
+  }
+
+  // Load saved credentials if Remember Me was checked
+  void _loadSavedCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    final rememberMe = prefs.getBool('remember_me') ?? false;
+    final savedEmail = prefs.getString('saved_email') ?? '';
+
+    print('DEBUG: Remember Me = $rememberMe');
+    print('DEBUG: Saved Email = $savedEmail');
+
+    // Only load the email, but don't auto-check the checkbox
+    if (savedEmail.isNotEmpty) {
+      setState(() {
+        _emailController.text = savedEmail;
+      });
+      print('DEBUG: Email loaded from saved credentials');
+    }
   }
 
   @override
@@ -119,6 +138,17 @@ class _LoginPageState extends State<LoginPage> {
         await prefs.setString('user_email', responseData['data']['user']['email']);
         await prefs.setString('user_name', responseData['data']['user']['full_name']);
         await prefs.setBool('is_logged_in', true);
+
+        // Handle Remember Me functionality
+        if (_rememberMe) {
+          // Save email for next time
+          await prefs.setBool('remember_me', true);
+          await prefs.setString('saved_email', _emailController.text.trim().toLowerCase());
+        } else {
+          // Clear saved credentials
+          await prefs.remove('remember_me');
+          await prefs.remove('saved_email');
+        }
 
         if (mounted) {
           setState(() {
