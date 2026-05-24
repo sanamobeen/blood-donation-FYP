@@ -57,6 +57,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "blooddonation.middleware.HandleConnectionErrorsMiddleware",  # Handle broken pipe gracefully
 ]
 
 ROOT_URLCONF = "blooddonation.urls"
@@ -208,15 +209,22 @@ LOGGING = {
             "style": "{",
         },
     },
+    "filters": {
+        "ignore_broken_pipe": {
+            "()": "blooddonation.logging_filter.IgnoreBrokenPipeFilter",
+        },
+    },
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
             "formatter": "verbose",
+            "filters": ["ignore_broken_pipe"],
         },
         "file": {
             "class": "logging.FileHandler",
             "filename": BASE_DIR / "logs" / "django.log",
             "formatter": "verbose",
+            "filters": ["ignore_broken_pipe"],
         },
     },
     "root": {
@@ -227,6 +235,11 @@ LOGGING = {
         "django": {
             "handlers": ["console", "file"],
             "level": "INFO",
+            "propagate": False,
+        },
+        "django.request": {  # Handle request-related errors (broken pipe, etc)
+            "handlers": ["console", "file"],
+            "level": "WARNING",  # Only log actual errors, not client disconnects
             "propagate": False,
         },
         "apps": {
