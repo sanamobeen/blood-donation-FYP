@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/api_config.dart';
+import 'api_service.dart';
 
 /// Authentication service for handling user registration, login, and token management
 /// Separates authentication logic from UI components for better code organization
@@ -72,13 +73,26 @@ class AuthService {
         final responseData = jsonDecode(response.body);
 
         if (responseData['success'] == true) {
-          // Store JWT tokens and user data
-          await _storeAuthData(responseData['data']);
+          final data = responseData['data'];
 
-          return AuthResult.success(
-            userData: responseData['data']['user'],
-            message: responseData['message'] ?? 'Registration successful',
-          );
+          // Check if tokens are present (email already verified)
+          // or if email verification is required
+          if (data.containsKey('tokens') && data['tokens'] != null) {
+            // Store JWT tokens and user data for immediate login
+            await _storeAuthData(data);
+
+            return AuthResult.success(
+              userData: data['user'],
+              message: responseData['message'] ?? 'Registration successful',
+            );
+          } else {
+            // Email verification required - no tokens yet
+            return AuthResult.success(
+              userData: {'email': data['email']},
+              message: responseData['message'] ?? 'Please verify your email to complete registration',
+              requiresVerification: true,
+            );
+          }
         } else {
           return AuthResult.failure(responseData['message'] ?? 'Registration failed');
         }
@@ -227,6 +241,105 @@ class AuthService {
     return prefs.getString('access_token');
   }
 
+  /// Send email verification
+  static Future<AuthResult> sendVerificationEmail() async {
+    try {
+      final token = await getAccessToken();
+      if (token == null) {
+        return AuthResult.failure('Not authenticated');
+      }
+
+      final response = await http.post(
+        Uri.parse(ApiConfig.sendVerificationEndpoint),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(
+        ApiConfig.connectTimeout,
+        onTimeout: () {
+          throw Exception('Request timeout');
+        },
+      );
+
+      if (kDebugMode) {
+        print('Send verification response: ${response.statusCode}');
+        print('Response body: ${response.body}');
+      }
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+
+        return AuthResult.success(
+          userData: {},
+          message: responseData['message'] ?? 'Verification email sent',
+        );
+      }
+
+      final errorData = jsonDecode(response.body);
+      String errorMessage = 'Failed to send verification email';
+      if (errorData.containsKey('error')) {
+        errorMessage = errorData['error'];
+      } else if (errorData.containsKey('message')) {
+        errorMessage = errorData['message'];
+      }
+
+      return AuthResult.failure(errorMessage);
+
+    } catch (e) {
+      if (kDebugMode) {
+        print('Send verification error: $e');
+      }
+      return AuthResult.failure('Failed to send verification email: ${e.toString()}');
+    }
+  }
+
+  /// Verify email with 6-digit code
+  static Future<AuthResult> verifyEmail({required String code}) async {
+    try {
+      final response = await http.post(
+        Uri.parse(ApiConfig.verifyEmailEndpoint),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'code': code}),
+      ).timeout(
+        ApiConfig.connectTimeout,
+        onTimeout: () {
+          throw Exception('Request timeout');
+        },
+      );
+
+      if (kDebugMode) {
+        print('Verify email response: ${response.statusCode}');
+        print('Response body: ${response.body}');
+      }
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+
+        return AuthResult.success(
+          userData: responseData,
+          message: responseData['message'] ?? 'Email verified successfully',
+        );
+      }
+
+      final errorData = jsonDecode(response.body);
+      String errorMessage = 'Verification failed';
+      if (errorData.containsKey('error')) {
+        errorMessage = errorData['error'];
+      } else if (errorData.containsKey('message')) {
+        errorMessage = errorData['message'];
+      }
+
+      return AuthResult.failure(errorMessage);
+
+    } catch (e) {
+      if (kDebugMode) {
+        print('Verify email error: $e');
+      }
+      return AuthResult.failure('Verification failed: ${e.toString()}');
+    }
+  }
+
   /// Store authentication data from successful login/registration
   static Future<void> _storeAuthData(Map<String, dynamic> data) async {
     final prefs = await SharedPreferences.getInstance();
@@ -248,22 +361,26 @@ class AuthResult {
   final bool success;
   final Map<String, dynamic>? userData;
   final String? message;
+  final bool requiresVerification;
 
   AuthResult._({
     required this.success,
     this.userData,
     this.message,
+    this.requiresVerification = false,
   });
 
   /// Create successful result
   factory AuthResult.success({
     required Map<String, dynamic> userData,
     String? message,
+    bool requiresVerification = false,
   }) {
     return AuthResult._(
       success: true,
       userData: userData,
       message: message,
+      requiresVerification: requiresVerification,
     );
   }
 

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
+import 'verify_email_page.dart';
+import 'pages/role_selection_page.dart';
 import 'services/auth_service.dart';
 
 class QuickRegistrationPage extends StatefulWidget {
@@ -59,29 +61,55 @@ class _QuickRegistrationPageState extends State<QuickRegistrationPage> {
 
         if (mounted) {
           if (result.success) {
-            // Show success message
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(result.displayMessage),
-                backgroundColor: Colors.green,
-                duration: const Duration(seconds: 2),
-              ),
-            );
+            // Check if email verification is required
+            if (result.requiresVerification) {
+              // Navigate directly to verification page
+              Navigator.of(context).pushReplacement(
+                PageRouteBuilder(
+                  pageBuilder: (context, animation, secondaryAnimation) =>
+                      const VerifyEmailPage(),
+                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                    return FadeTransition(
+                      opacity: animation,
+                      child: child,
+                    );
+                  },
+                  transitionDuration: const Duration(milliseconds: 800),
+                ),
+              );
 
-            // Navigate to login page after successful registration
-            Navigator.of(context).pushReplacement(
-              PageRouteBuilder(
-                pageBuilder: (context, animation, secondaryAnimation) =>
-                    const LoginScreen(),
-                transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                  return FadeTransition(
-                    opacity: animation,
-                    child: child,
-                  );
-                },
-                transitionDuration: const Duration(milliseconds: 800),
-              ),
-            );
+              // Show message
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(result.displayMessage),
+                  backgroundColor: Colors.green,
+                  duration: const Duration(seconds: 4),
+                ),
+              );
+            } else {
+              // Registration completed without email verification (rare case)
+              Navigator.of(context).pushReplacement(
+                PageRouteBuilder(
+                  pageBuilder: (context, animation, secondaryAnimation) =>
+                      const RoleSelectionPage(),
+                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                    return FadeTransition(
+                      opacity: animation,
+                      child: child,
+                    );
+                  },
+                  transitionDuration: const Duration(milliseconds: 800),
+                ),
+              );
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(result.displayMessage),
+                  backgroundColor: Colors.green,
+                  duration: const Duration(seconds: 3),
+                ),
+              );
+            }
           } else {
             // Show error message
             ScaffoldMessenger.of(context).showSnackBar(
@@ -189,9 +217,16 @@ class _QuickRegistrationPageState extends State<QuickRegistrationPage> {
                     if (value == null || value.isEmpty) {
                       return 'Please enter your phone number';
                     }
-                    if (value.length < 10) {
-                      return 'Please enter a valid phone number';
+                    // Allow formats: 03001234567 (11 digits) or +923001234567 (12 chars)
+                    final cleanPhone = value.replaceAll('+', '').trim();
+                    if (cleanPhone.length == 11 && cleanPhone.startsWith('0')) {
+                      return null; // Valid: 03001234567
+                    } else if (value.length == 12 && value.startsWith('+92')) {
+                      return null; // Valid: +923001234567
+                    } else if (value.length == 11 && value.startsWith('0')) {
+                      return null; // Valid: 03001234567
                     }
+                    return 'Phone number must start with 0 (e.g., 03001234567) or +92';
                     return null;
                   },
                 ),

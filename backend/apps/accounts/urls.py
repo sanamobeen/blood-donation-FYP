@@ -11,6 +11,7 @@ from .views import (
     VerifyEmailView,
     ForgotPasswordView,
     ResetPasswordView,
+    GetVerificationTokensView,
 )
 from .views_donor_search import find_donors_nearby, donor_search_filters
 

@@ -66,7 +66,8 @@ def create_error_response(
 class RegisterView(generics.GenericAPIView):
     """
     User registration endpoint.
-    Creates new user accounts with optional donor profile.
+    Creates pending registration and sends verification email.
+    User is only created after email verification.
     Rate limiting disabled for development.
     """
 
@@ -77,7 +78,8 @@ class RegisterView(generics.GenericAPIView):
     def post(self, request) -> Response:
         """
         Handle user registration POST requests.
-        Creates user account, donor profile, and returns authentication tokens.
+        Creates pending registration, sends verification email.
+        User account is created only after email verification.
         """
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
@@ -98,27 +100,105 @@ class RegisterView(generics.GenericAPIView):
             )
 
         try:
-            user = serializer.save()
+            # Extract validated data
+            email = serializer.validated_data.get('email', '').lower()
+            password = serializer.validated_data.get('password', '')
+            full_name = serializer.validated_data.get('full_name', '')
+            phone = serializer.validated_data.get('phone', '')
 
-            # Create email verification token
-            from .models import EmailVerification
+            # Check if email already exists (either as user or pending)
+            from .models import CustomUser, PendingRegistration
 
-            verification = EmailVerification.objects.create(user_id=user.id)
-            logger.info(
-                f"Registration - Verification email for {user.email}: Token = {verification.token}"
+            if CustomUser.objects.filter(email=email).exists():
+                return create_error_response(
+                    message="An account with this email already exists. Please login.",
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
+
+            if PendingRegistration.objects.filter(email=email, is_verified=False).exists():
+                # Delete old pending registration and create new one
+                PendingRegistration.objects.filter(email=email, is_verified=False).delete()
+
+            # Create pending registration
+            pending = PendingRegistration(
+                email=email,
+                password=password,  # Will be hashed by the model's create_user method
+                full_name=full_name,
+                phone=phone,
             )
+            pending.save()  # This generates the verification code
+
+            # Send verification email
+            try:
+                verification_link = f"{settings.FRONTEND_URL}verify-email?code={pending.verification_code}"
+
+                subject = "Verify Your Email - Blood Donation System"
+                message = f"""Hello {full_name or 'User'},
+
+Thank you for registering with the Blood Donation System!
+
+Please verify your email address using your verification code:
+
+Your verification code is: {pending.verification_code}
+
+This code will expire in 24 hours.
+
+Or click the link below (if deep linking is enabled):
+{verification_link}
+
+If you didn't create an account with us, please ignore this email.
+
+Best regards,
+Blood Donation Team"""
+
+                send_mail(
+                    subject=subject,
+                    message=message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[email],
+                    fail_silently=False,
+                )
+
+                logger.info(f"Verification email sent successfully to {email}")
+
+            except Exception as email_error:
+                logger.error(f"Failed to send verification email during registration: {str(email_error)}")
+                return create_error_response(
+                    message=f"Failed to send verification email: {str(email_error)}",
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+
+            return create_api_response(
+                message="Registration initiated. Please check your email to verify your account.",
+                data={
+                    "email": email,
+                    "message": "Please verify your email to complete registration",
+                },
+                status_code=status.HTTP_201_CREATED,
+            )
+
+        except Exception as e:
+            logger.error(
+                f"Unexpected error during registration: {str(e)}", exc_info=True
+            )
+            return create_error_response(
+                message=f"Registration failed: {str(e)}",
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+                # Email verification link will still be included in response for testing
 
             # Generate JWT tokens
             refresh = RefreshToken.for_user(user)
 
             return create_api_response(
-                message="User registered successfully.",
+                message="User registered successfully. Please check your email to verify your account.",
                 data={
                     "user": {
                         "id": user.id,
                         "email": user.email,
                         "full_name": user.full_name,
                         "phone": user.phone,
+                        "is_verified": user.is_verified,
                     },
                     "tokens": {
                         "access": str(refresh.access_token),
@@ -160,9 +240,34 @@ class LoginView(generics.GenericAPIView):
             serializer.is_valid(raise_exception=True)
 
             user = serializer.validated_data["user"]
+            email_not_verified = serializer.validated_data.get("email_not_verified", False)
 
             # Generate JWT tokens
             refresh = RefreshToken.for_user(user)
+
+            # Prepare response message
+            message = "Login successful"
+            if email_not_verified:
+                message = "Login successful. Please verify your email to access all features."
+
+            return create_api_response(
+                message=message,
+                data={
+                    "user": {
+                        "id": user.id,
+                        "email": user.email,
+                        "full_name": user.full_name,
+                        "phone": user.phone,
+                        "is_verified": user.is_verified,
+                        "email_not_verified": email_not_verified,
+                    },
+                    "tokens": {
+                        "access": str(refresh.access_token),
+                        "refresh": str(refresh),
+                    },
+                },
+                status_code=status.HTTP_200_OK,
+            )
 
             return create_api_response(
                 message="Login successful",
@@ -299,25 +404,66 @@ class SendVerificationEmailView(generics.GenericAPIView):
     def post(self, request):
         try:
             user = request.user
-            # Delete any existing unused verification tokens
+            # Delete any existing unused verification codes
             from .models import EmailVerification
 
             EmailVerification.objects.filter(user=user, is_used=False).delete()
 
-            # Create new verification token
+            # Create new verification code
             verification = EmailVerification.objects.create(user=user)
 
-            # TODO: Send actual email here
-            # For now, return the token in response (for testing only)
-            logger.info(
-                f"Verification email for {user.email}: Token = {verification.token}"
-            )
+            # Send actual verification email
+            try:
+                verification_link = f"{settings.FRONTEND_URL}verify-email?code={verification.code}"
+
+                subject = "Verify Your Email - Blood Donation System"
+                full_name = user.get_full_name()
+                message = f"""Hello {full_name or 'User'},
+
+Please verify your email address using your verification code:
+
+Your verification code is: {verification.code}
+
+This code will expire in 24 hours.
+
+Or click the link below (if deep linking is enabled):
+{verification_link}
+
+If you didn't create an account with us, please ignore this email.
+
+Best regards,
+Blood Donation Team"""
+
+                send_mail(
+                    subject=subject,
+                    message=message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[user.email],
+                    fail_silently=False,
+                )
+
+                logger.info(f"Verification email sent successfully to {user.email}")
+
+            except Exception as email_error:
+                logger.error(f"Failed to send verification email: {str(email_error)}")
+                return Response(
+                    {"error": f"Failed to send verification email: {str(email_error)}"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+
+            # Build response
+            response_data = {
+                "message": "Verification email sent successfully",
+                "email": user.email,
+            }
+
+            # Include code for testing in debug mode
+            if settings.DEBUG:
+                response_data["code"] = verification.code
+                response_data["verification_link"] = f"{settings.FRONTEND_URL}verify-email?code={verification.code}"
 
             return Response(
-                {
-                    "message": "Verification email sent successfully",
-                    # "token": str(verification.token),  # Uncomment for testing only
-                },
+                response_data,
                 status=status.HTTP_200_OK,
             )
 
@@ -334,38 +480,89 @@ class VerifyEmailView(generics.GenericAPIView):
 
     def post(self, request):
         try:
-            from .models import EmailVerification
+            from .models import EmailVerification, PendingRegistration
 
-            token = request.data.get("token")
-            if not token:
+            code = request.data.get("code")
+            if not code:
                 return Response(
-                    {"error": "Token is required"}, status=status.HTTP_400_BAD_REQUEST
+                    {"error": "Verification code is required"}, status=status.HTTP_400_BAD_REQUEST
                 )
 
+            # First check if this is a pending registration verification
             try:
-                verification = EmailVerification.objects.get(token=token)
-            except EmailVerification.DoesNotExist:
+                pending = PendingRegistration.objects.get(verification_code=code, is_verified=False)
+
+                if not pending.is_valid():
+                    return Response(
+                        {"error": "Code has expired"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                # Create the user from pending registration
+                user = pending.create_user()
+
+                # Mark pending registration as verified
+                pending.is_verified = True
+                pending.save()
+
+                # Generate JWT tokens for the new user
+                refresh = RefreshToken.for_user(user)
+
+                logger.info(f"Email verified and user created: {user.email}")
+
                 return Response(
-                    {"error": "Invalid verification token"},
-                    status=status.HTTP_400_BAD_REQUEST,
+                    {
+                        "success": True,
+                        "message": "Email verified successfully. Your account has been created.",
+                        "email": user.email,
+                        "user": {
+                            "id": user.id,
+                            "email": user.email,
+                            "full_name": user.full_name,
+                            "phone": user.phone,
+                            "is_verified": user.is_verified,
+                        },
+                        "tokens": {
+                            "access": str(refresh.access_token),
+                            "refresh": str(refresh),
+                        },
+                    },
+                    status=status.HTTP_200_OK
                 )
 
-            if not verification.is_valid():
+            except PendingRegistration.DoesNotExist:
+                # Check if it's an existing user's email verification (for users who already exist)
+                try:
+                    verification = EmailVerification.objects.get(code=code)
+                except EmailVerification.DoesNotExist:
+                    return Response(
+                        {"error": "Invalid verification code"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                if not verification.is_valid():
+                    return Response(
+                        {"error": "Code has expired or already used"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                # Mark user email as verified and verification as used
+                user = verification.user
+                user.is_verified = True
+                user.save()
+                verification.is_used = True
+                verification.save()
+
+                logger.info(f"Email verified successfully for {user.email}")
+
                 return Response(
-                    {"error": "Token has expired or already used"},
-                    status=status.HTTP_400_BAD_REQUEST,
+                    {
+                        "success": True,
+                        "message": "Email verified successfully",
+                        "email": user.email,
+                    },
+                    status=status.HTTP_200_OK
                 )
-
-            # Mark user as active and verification as used
-            user = verification.user
-            user.is_active = True
-            user.save()
-            verification.is_used = True
-            verification.save()
-
-            return Response(
-                {"message": "Email verified successfully"}, status=status.HTTP_200_OK
-            )
 
         except Exception as e:
             logger.error(f"Email verification error: {str(e)}", exc_info=True)
@@ -373,6 +570,44 @@ class VerifyEmailView(generics.GenericAPIView):
                 {"error": "Email verification failed"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+
+# TEST ENDPOINT - Get verification codes (for development/testing only)
+class GetVerificationTokensView(generics.GenericAPIView):
+    """
+    Development-only endpoint to get all verification codes.
+    Remove this in production!
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        if not settings.DEBUG:
+            return Response(
+                {"error": "This endpoint is only available in DEBUG mode"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        from .models import EmailVerification
+
+        verifications = EmailVerification.objects.filter(is_used=False).order_by('-created_at')[:10]
+
+        data = []
+        for v in verifications:
+            data.append({
+                "email": v.user.email,
+                "code": v.code,
+                "created_at": v.created_at.isoformat(),
+                "is_used": v.is_used,
+                "verification_link": f"{settings.FRONTEND_URL}verify-email?code={v.code}",
+                "api_endpoint": f"/api/accounts/verify/",
+                "api_payload": {"code": v.code},
+            })
+
+        return Response({
+            "message": "Latest verification codes (for testing)",
+            "count": len(data),
+            "data": data
+        })
 
 
 # FORGOT PASSWORD VIEW

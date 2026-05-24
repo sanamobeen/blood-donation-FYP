@@ -6,6 +6,7 @@ import 'services/language_service.dart';
 import 'utils/mock_data.dart';
 import 'config/api_config.dart';
 import 'pages/role_selection_page.dart';
+import 'verify_email_page.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -171,19 +172,99 @@ class _RegisterPageState extends State<RegisterPage> {
             _isRegistering = false;
           });
 
-          // Show success message with user data
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(selectedLanguage == 'ur' ? 'رجسٹریشن کامیاب!' : 'Registration successful! Welcome, $userName'),
-              backgroundColor: Colors.green,
-              duration: const Duration(seconds: 3),
+          // Show email verification dialog
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.green[700]),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      selectedLanguage == 'ur' ? 'رجسٹریشن کامیاب!' : 'Registration Successful!',
+                      style: TextStyle(fontSize: 18),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(selectedLanguage == 'ur' ? 'آپ کا اکاؤنٹ کامیابی سے بنا دیا گیا ہے۔' : 'Your account has been created successfully.'),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.orange[50],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.orange[300]!),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.info_outline, color: Colors.orange[700], size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            selectedLanguage == 'ur'
+                                ? 'آپ کے ای میل ایڈریس پر ایک تصدیقی ای میل بھیجا گیا۔ براہ کرم اپنے تمام خصوصیات تک رسائی کے لیے اپنا ای میل تصدیق کریں۔'
+                                : 'A verification email has been sent to your email address. Please verify your email to access all features.',
+                            style: TextStyle(fontSize: 13),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    // Navigate to role selection page and clear all navigation stack
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (context) => const RoleSelectionPage()),
+                      (route) => false,
+                    );
+                  },
+                  child: Text(
+                    selectedLanguage == 'ur' ? 'بعد میں' : 'Later',
+                    style: TextStyle(color: Colors.grey[700]),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    // Navigate to email verification page
+                    Navigator.of(context).pushReplacement(
+                      PageRouteBuilder(
+                        pageBuilder: (context, animation, secondaryAnimation) =>
+                            const VerifyEmailPage(),
+                        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                          return FadeTransition(
+                            opacity: animation,
+                            child: child,
+                          );
+                        },
+                        transitionDuration: const Duration(milliseconds: 800),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red[700],
+                    foregroundColor: Colors.white,
+                  ),
+                  child: Text(
+                    selectedLanguage == 'ur' ? 'ای میل تصدیق کریں' : 'Verify Email',
+                  ),
+                ),
+              ],
             ),
-          );
-
-          // Navigate to role selection page and clear all navigation stack
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (context) => const RoleSelectionPage()),
-            (route) => false,
           );
         }
       } else if (response.statusCode == 400) {

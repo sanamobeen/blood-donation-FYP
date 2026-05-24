@@ -107,10 +107,11 @@ class UserSerializer(serializers.ModelSerializer):
             "confirm_password",
             "is_staff",
             "is_active",
+            "is_verified",
             "date_joined",
             "profile",
         ]
-        read_only_fields = ["id", "is_staff", "is_active", "date_joined"]
+        read_only_fields = ["id", "is_staff", "is_active", "is_verified", "date_joined"]
         extra_kwargs = {
             'password': {'write_only': True},
             'confirm_password': {'write_only': True}
@@ -295,6 +296,12 @@ class LoginSerializer(serializers.Serializer):
             raise serializers.ValidationError(
                 "This account has been disabled. Please contact support."
             )
+
+        # Check email verification but allow login with a warning
+        if not user.is_verified:
+            logger.warning(f"Login attempt for unverified email: {email}")
+            # Add verification flag to attrs so the view can include it in response
+            attrs["email_not_verified"] = True
 
         attrs["user"] = user
         logger.info(f"Successful login for: {email}")

@@ -392,7 +392,16 @@ class _AddContactDialogState extends State<_AddContactDialog> {
                 if (value == null || value.isEmpty) {
                   return 'Please enter a phone number';
                 }
-                return null;
+                // Allow formats: 03001234567 (11 digits) or +923001234567 (12 chars)
+                final cleanPhone = value.replaceAll('+', '').trim();
+                if (cleanPhone.length == 11 && cleanPhone.startsWith('0')) {
+                  return null; // Valid: 03001234567
+                } else if (value.length == 12 && value.startsWith('+92')) {
+                  return null; // Valid: +923001234567
+                } else if (value.length == 11 && value.startsWith('0')) {
+                  return null; // Valid: 03001234567
+                }
+                return 'Phone number must start with 0 (e.g., 03001234567) or +92';
               },
             ),
           ],

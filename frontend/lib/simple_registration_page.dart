@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'services/auth_service.dart';
+import 'verify_email_page.dart';
 
 class SimpleRegistrationPage extends StatefulWidget {
   final String role;
@@ -110,14 +111,32 @@ class _SimpleRegistrationPageState extends State<SimpleRegistrationPage> {
 
         if (mounted) {
           if (result.success) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(result.displayMessage),
-                backgroundColor: Colors.green,
-              ),
-            );
-            // Navigate to login or main page
-            Navigator.popUntil(context, (route) => route.isFirst);
+            // Check if email verification is required
+            if (result.requiresVerification) {
+              // Navigate to verification page
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const VerifyEmailPage()),
+              );
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(result.displayMessage),
+                  backgroundColor: Colors.green,
+                  duration: const Duration(seconds: 4),
+                ),
+              );
+            } else {
+              // Registration completed - go back
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(result.displayMessage),
+                  backgroundColor: Colors.green,
+                ),
+              );
+              // Navigate to login or main page
+              Navigator.popUntil(context, (route) => route.isFirst);
+            }
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -230,7 +249,16 @@ class _SimpleRegistrationPageState extends State<SimpleRegistrationPage> {
                       if (value == null || value.isEmpty) {
                         return 'Please enter your phone number';
                       }
-                      return null;
+                      // Allow formats: 03001234567 (11 digits) or +923001234567 (12 chars)
+                      final cleanPhone = value.replaceAll('+', '').trim();
+                      if (cleanPhone.length == 11 && cleanPhone.startsWith('0')) {
+                        return null; // Valid: 03001234567
+                      } else if (value.length == 12 && value.startsWith('+92')) {
+                        return null; // Valid: +923001234567
+                      } else if (value.length == 11 && value.startsWith('0')) {
+                        return null; // Valid: 03001234567
+                      }
+                      return 'Phone number must start with 0 (e.g., 03001234567) or +92';
                     },
                   ),
                   const SizedBox(height: 16),
