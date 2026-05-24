@@ -41,6 +41,8 @@ class ApiConfig {
   static String get donorRegisterEndpoint => '$baseUrl/api/accounts/donor/register/';
   static String get forgotPasswordEndpoint => '$baseUrl/api/accounts/forgot-password/';
   static String get resetPasswordEndpoint => '$baseUrl/api/accounts/reset-password/';
+  static String get sendVerificationEndpoint => '$baseUrl/api/accounts/verify/send/';
+  static String get verifyEmailEndpoint => '$baseUrl/api/accounts/verify/';
 
   // Blood Request Endpoints
   static String get bloodRequestListEndpoint => '$baseUrl/api/blood-requests/';
@@ -55,8 +57,8 @@ class ApiConfig {
   static String get bloodGroupsEndpoint => '$baseUrl/api/blood-requests/blood-groups/';
   static String get gendersEndpoint => '$baseUrl/api/blood-requests/genders/';
 
-  // Timeout duration
-  static const Duration connectTimeout = Duration(seconds: 30);
-  static const Duration receiveTimeout = Duration(seconds: 30);
-  static const Duration sendTimeout = Duration(seconds: 30);
+  // Timeout duration - increased to prevent broken pipe errors
+  static const Duration connectTimeout = Duration(seconds: 60);
+  static const Duration receiveTimeout = Duration(seconds: 60);
+  static const Duration sendTimeout = Duration(seconds: 60);
 }
