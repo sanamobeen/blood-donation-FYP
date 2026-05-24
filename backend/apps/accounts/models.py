@@ -68,6 +68,11 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         verbose_name="Active",
         help_text="Designates whether this user should be treated as active"
     )
+    is_verified = models.BooleanField(
+        default=False,
+        verbose_name="Email Verified",
+        help_text="Designates whether the user's email has been verified"
+    )
     date_joined = models.DateTimeField(
         auto_now_add=True,
         verbose_name="Date Joined",
@@ -332,8 +337,8 @@ class Donor(models.Model):
 # Email Verification Model
 class EmailVerification(models.Model):
     """
-    Email verification tokens for user account activation.
-    Tokens expire after 24 hours for security.
+    Email verification codes for user account activation.
+    Codes expire after 24 hours for security.
     """
 
     id = models.AutoField(primary_key=True)
@@ -343,22 +348,22 @@ class EmailVerification(models.Model):
         related_name="email_verifications",
         verbose_name="User"
     )
-    token = models.UUIDField(
-        default=uuid.uuid4,
+    code = models.CharField(
+        max_length=6,
         editable=False,
         unique=True,
-        verbose_name="Verification Token",
-        help_text="Unique token for email verification",
+        verbose_name="Verification Code",
+        help_text="6-digit verification code for email verification",
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name="Created At",
-        help_text="Token creation timestamp",
+        help_text="Code creation timestamp",
     )
     is_used = models.BooleanField(
         default=False,
         verbose_name="Used",
-        help_text="Whether the token has been used"
+        help_text="Whether the code has been used"
     )
 
     class Meta:
@@ -366,17 +371,37 @@ class EmailVerification(models.Model):
         verbose_name_plural = "Email Verifications"
         ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=["token"]),
+            models.Index(fields=["code"]),
             models.Index(fields=["user", "is_used"]),
         ]
 
     def __str__(self) -> str:
-        return f"{self.user.email} - {self.token}"
+        return f"{self.user.email} - {self.code}"
+
+    @classmethod
+    def generate_code(cls) -> str:
+        """
+        Generate a unique 6-digit verification code.
+        Returns a 6-digit string.
+        """
+        import random
+        while True:
+            code = f"{random.randint(100000, 999999)}"
+            if not cls.objects.filter(code=code).exists():
+                return code
+
+    def save(self, *args, **kwargs):
+        """
+        Override save to generate code if not already set.
+        """
+        if not self.code:
+            self.code = self.generate_code()
+        super().save(*args, **kwargs)
 
     def is_valid(self) -> bool:
         """
-        Check if token is valid (not used and not expired - 24 hours).
-        Returns True if token can be used for verification.
+        Check if code is valid (not used and not expired - 24 hours).
+        Returns True if code can be used for verification.
         """
         if self.is_used:
             return False
@@ -437,3 +462,108 @@ class PasswordReset(models.Model):
             return False
         expiration_time = timezone.now() - timezone.timedelta(hours=1)
         return self.created_at > expiration_time
+
+
+# Pending Registration Model
+class PendingRegistration(models.Model):
+    """
+    Stores pending user registrations until email verification is complete.
+    Users are only created as CustomUser after successful verification.
+    """
+
+    email = models.EmailField(
+        unique=True,
+        max_length=254,
+        verbose_name="Email Address",
+        help_text="Email address for pending registration"
+    )
+    password = models.CharField(
+        max_length=128,
+        verbose_name="Password",
+        help_text="Hashed password for the pending registration"
+    )
+    full_name = models.CharField(
+        max_length=150,
+        blank=True,
+        verbose_name="Full Name",
+        help_text="User's full name"
+    )
+    phone = models.CharField(
+        max_length=15,
+        blank=True,
+        null=True,
+        verbose_name="Phone Number",
+        help_text="Contact phone number"
+    )
+    verification_code = models.CharField(
+        max_length=6,
+        unique=True,
+        verbose_name="Verification Code",
+        help_text="6-digit email verification code"
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Created At",
+        help_text="Pending registration creation timestamp"
+    )
+    expires_at = models.DateTimeField(
+        verbose_name="Expires At",
+        help_text="When this pending registration expires"
+    )
+    is_verified = models.BooleanField(
+        default=False,
+        verbose_name="Verified",
+        help_text="Whether the email has been verified"
+    )
+
+    class Meta:
+        verbose_name = "Pending Registration"
+        verbose_name_plural = "Pending Registrations"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["email"]),
+            models.Index(fields=["verification_code"]),
+            models.Index(fields=["is_verified", "expires_at"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.email} - Pending"
+
+    @classmethod
+    def generate_code(cls) -> str:
+        """Generate a unique 6-digit verification code"""
+        import random
+        while True:
+            code = f"{random.randint(100000, 999999)}"
+            if not cls.objects.filter(verification_code=code).exists():
+                return code
+
+    def save(self, *args, **kwargs):
+        """Set expiration time (24 hours from creation) if not set"""
+        if not self.expires_at:
+            from datetime import timedelta
+            self.expires_at = timezone.now() + timedelta(hours=24)
+        if not self.verification_code:
+            self.verification_code = self.generate_code()
+        super().save(*args, **kwargs)
+
+    def is_valid(self) -> bool:
+        """Check if pending registration is still valid (not verified and not expired)"""
+        if self.is_verified:
+            return False
+        return timezone.now() < self.expires_at
+
+    def create_user(self):
+        """Create a CustomUser from this pending registration"""
+        from django.contrib.auth.hashers import check_password
+
+        user = CustomUser(
+            email=self.email,
+            full_name=self.full_name,
+            phone=self.phone,
+            is_verified=True,  # Email is verified
+            is_active=True,
+        )
+        user.set_password(self.password)  # Hash the password
+        user.save()
+        return user

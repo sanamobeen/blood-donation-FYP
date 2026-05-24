@@ -268,9 +268,10 @@ DEFAULT_FROM_EMAIL = "sanamobin7@gmail.com"
 
 EMAIL_SUBJECT_PREFIX = "[Blood Donation]"
 
-# Frontend URL for password reset link
-# Production: Use custom URL scheme for deep linking
-# Format: yourapp://reset-password?email=xxx&token=xxx
+# Frontend URL for password reset and email verification links
+# For mobile app deep linking, use custom URL scheme
+# Format: blooddonation://verify-email?token=xxx
+# For web testing during development, you can use: http://localhost:3000
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "blooddonation://")
 
 # Create logs directory if it doesn't exist

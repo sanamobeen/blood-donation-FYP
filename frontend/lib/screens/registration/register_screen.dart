@@ -4,6 +4,7 @@ import 'package:http/http.dart.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../pages/role_selection_page.dart';
 import '../../config/api_config.dart';
+import '../../verify_email_page.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -55,29 +56,50 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       if (response.statusCode == 201) {
         final responseData = jsonDecode(response.body);
+        final data = responseData['data'];
 
-        // Store tokens for future API calls
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('access_token', responseData['data']['tokens']['access']);
-        await prefs.setString('refresh_token', responseData['data']['tokens']['refresh']);
-        await prefs.setString('user_email', _emailController.text.trim());
+        // Check if tokens are present (email already verified)
+        if (data.containsKey('tokens') && data['tokens'] != null) {
+          // Store tokens for future API calls
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('access_token', data['tokens']['access']);
+          await prefs.setString('refresh_token', data['tokens']['refresh']);
+          await prefs.setString('user_email', _emailController.text.trim());
 
-        // Navigate to role selection screen on success
-        if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const RoleSelectionPage()),
-          );
-        }
+          // Navigate to role selection screen on success
+          if (mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const RoleSelectionPage()),
+            );
+          }
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Registration successful! Welcome to Blood Donation.'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 3),
-            ),
-          );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Registration successful! Welcome to Blood Donation.'),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
+        } else {
+          // Email verification required - no tokens yet
+          if (mounted) {
+            // Navigate to verification screen
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const VerifyEmailPage()),
+            );
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(responseData['message'] ?? 'Please verify your email to complete registration'),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 4),
+              ),
+            );
+          }
         }
       } else {
         final errorData = jsonDecode(response.body);
@@ -219,7 +241,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       if (value == null || value.isEmpty) {
                         return 'Please enter your phone number';
                       }
-                      return null;
+                      // Allow formats: 03001234567 (11 digits) or +923001234567 (12 chars)
+                      final cleanPhone = value.replaceAll('+', '').trim();
+                      if (cleanPhone.length == 11 && cleanPhone.startsWith('0')) {
+                        return null; // Valid: 03001234567
+                      } else if (value.length == 12 && value.startsWith('+92')) {
+                        return null; // Valid: +923001234567
+                      } else if (value.length == 11 && value.startsWith('0')) {
+                        return null; // Valid: 03001234567
+                      }
+                      return 'Phone number must start with 0 (e.g., 03001234567) or +92';
                     },
                   ),
                   const SizedBox(height: 15),

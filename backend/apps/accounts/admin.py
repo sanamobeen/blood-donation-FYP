@@ -1,16 +1,16 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import CustomUser, UserProfile, Donor, EmailVerification, PasswordReset
+from .models import CustomUser, UserProfile, Donor, EmailVerification, PasswordReset, PendingRegistration
 
 
 @admin.register(CustomUser)
 class CustomUserAdmin(UserAdmin):
     model = CustomUser
 
-    list_display = ("email", "full_name", "phone", "has_password", "is_staff", "is_active", "date_joined")
+    list_display = ("email", "full_name", "phone", "is_verified", "has_password", "is_staff", "is_active", "date_joined")
     search_fields = ("email", "full_name", "phone")
     ordering = ("email",)
-    list_filter = ("is_staff", "is_active", "date_joined")
+    list_filter = ("is_verified", "is_staff", "is_active", "date_joined")
     readonly_fields = ("date_joined",)
 
     fieldsets = (
@@ -20,9 +20,10 @@ class CustomUserAdmin(UserAdmin):
             {"fields": ("full_name", "phone")},
         ),
         (
-            "Status",
+            "Verification & Status",
             {
                 "fields": (
+                    "is_verified",
                     "is_staff",
                     "is_active",
                     "is_superuser",
@@ -45,6 +46,7 @@ class CustomUserAdmin(UserAdmin):
                     "phone",
                     "password1",
                     "password2",
+                    "is_verified",
                     "is_staff",
                     "is_active",
                 ),
@@ -86,11 +88,11 @@ class DonorAdmin(admin.ModelAdmin):
 
 @admin.register(EmailVerification)
 class EmailVerificationAdmin(admin.ModelAdmin):
-    list_display = ("user_email", "token", "is_used", "created_at")
-    search_fields = ("user__email", "token")
+    list_display = ("user_email", "code", "is_used", "created_at")
+    search_fields = ("user__email", "code")
     list_filter = ("is_used", "created_at")
     ordering = ("-created_at",)
-    readonly_fields = ("token", "created_at")
+    readonly_fields = ("code", "created_at")
 
     def user_email(self, obj):
         return obj.user.email
@@ -106,3 +108,33 @@ class PasswordResetAdmin(admin.ModelAdmin):
 
     def user_email(self, obj):
         return obj.user.email
+
+
+@admin.register(PendingRegistration)
+class PendingRegistrationAdmin(admin.ModelAdmin):
+    list_display = ("email", "full_name", "verification_code", "is_verified", "created_at", "expires_at")
+    search_fields = ("email", "full_name", "verification_code")
+    list_filter = ("is_verified", "created_at", "expires_at")
+    ordering = ("-created_at",)
+    readonly_fields = ("verification_code", "created_at", "expires_at")
+
+    def has_add_permission(self, request):
+        # Don't allow adding pending registrations through admin
+        return False
+
+    actions = ["create_user_from_pending"]
+
+    def create_user_from_pending(self, request, queryset):
+        """Admin action to manually create users from pending registrations"""
+        count = 0
+        for pending in queryset:
+            if not pending.is_verified:
+                try:
+                    pending.create_user()
+                    pending.is_verified = True
+                    pending.save()
+                    count += 1
+                except Exception as e:
+                    self.message_user(request, f"Error creating user for {pending.email}: {str(e)}", level="ERROR")
+        self.message_user(request, f"Created {count} user(s) from pending registrations.")
+    create_user_from_pending.short_description = "Create user account(s) from selected pending registrations"
